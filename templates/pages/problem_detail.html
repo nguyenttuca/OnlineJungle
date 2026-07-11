@@ -1,9 +1,9 @@
 {{ define "page" }}
-<div class="problem-container">
-    <div class="problem-statement">
+<div class="row">
+    <div class="col-lg-9 col-md-8 problem-statement">
         <h2 style="margin-top: 0; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color);">{{ .Data.Problem.Title }}</h2>
 
-        <div class="markdown-content" style="margin-top: 1.5em; margin-bottom: 2em; font-size: 1.05rem;">
+        <div class="markdown-content" style="margin-top: 1.5em; margin-bottom: 2em; font-size: 1.05rem;" id="problem-statement-content">
             {{ .Data.Problem.StatementMd }}
         </div>
 
@@ -28,43 +28,48 @@
         </div>
         {{ end }}
     </div>
-    <div class="problem-sidebar" style="max-width: 250px; min-width: 200px;">
-        {{ if .Data.ContestID }}
-            {{ if not .Data.CanSubmit }}
-            <div class="alert alert-warning p-2 text-center" style="font-size: 0.85em; margin-bottom: 10px;">
-                Ngoài khung giờ thi — bài nộp sẽ được chấm nhưng không tính vào bảng xếp hạng.
+    
+    <div class="col-lg-3 col-md-4 problem-sidebar">
+        <div class="card mb-4">
+            <div class="card-body">
+                {{ if .Data.ContestID }}
+                    {{ if not .Data.CanSubmit }}
+                    <div class="alert alert-warning p-2 text-center" style="font-size: 0.85em; margin-bottom: 10px;">
+                        Ngoài khung giờ thi — bài nộp sẽ được chấm nhưng không tính vào bảng xếp hạng.
+                    </div>
+                    {{ end }}
+                    <a href="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary w-100 mb-3"><i class="bi bi-cloud-arrow-up me-1"></i> Submit solution</a>
+                {{ else }}
+                    <a href="/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary w-100 mb-3"><i class="bi bi-cloud-arrow-up me-1"></i> Submit solution</a>
+                {{ end }}
+                
+                <div class="d-grid gap-2">
+                    <a href="/submissions?problem={{ .Data.Problem.Slug }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list-ul me-1"></i> All submissions</a>
+                    <a href="/submissions?problem={{ .Data.Problem.Slug }}&best=1" class="btn btn-outline-secondary btn-sm"><i class="bi bi-star me-1"></i> Best submissions</a>
+                </div>
             </div>
-            {{ end }}
-            <a href="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary btn-block mb-3" style="font-size: 1.1rem; padding: 10px; width: 100%; box-sizing: border-box; text-align: center;">Submit solution</a>
-        {{ else }}
-            <a href="/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary btn-block mb-3" style="font-size: 1.1rem; padding: 10px; width: 100%; box-sizing: border-box; text-align: center;">Submit solution</a>
-        {{ end }}
-        
-        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
-
-        <div style="margin-bottom: 0.5em;"><a href="/submissions?problem={{ .Data.Problem.Slug }}" style="text-decoration: none; color: var(--primary-color);">All submissions</a></div>
-        <div style="margin-bottom: 0.5em;"><a href="/submissions?problem={{ .Data.Problem.Slug }}&best=1" style="text-decoration: none; color: var(--primary-color);">Best submissions</a></div>
-
-        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
-
-        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #666;"><i class="fa fa-check fa-fw"></i> <strong>Points:</strong></span>
-            <span>100</span>
         </div>
-        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #666;"><i class="fa fa-clock-o fa-fw"></i> <strong>Time limit:</strong></span>
-            <span>{{ .Data.Problem.TimeLimitMs }}ms</span>
-        </div>
-        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #666;"><i class="fa fa-server fa-fw"></i> <strong>Memory limit:</strong></span>
-            <span>{{ .Data.Problem.MemoryLimitMb }}M</span>
-        </div>
-        
-        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
-        
-        <div class="problem-info-entry" style="padding-top: 0.5em;">
-            <span style="color: #666;"><i class="fa fa-pencil-square-o fa-fw"></i> <strong>Author:</strong></span>
-            <div style="padding-left: 1.5em; color: var(--primary-color);"><a href="#">Admin</a></div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-1"></i> Information</div>
+            <ul class="list-group list-group-flush" style="font-size: 0.9rem;">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-check-circle me-1"></i> Points</span>
+                    <strong>100</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-stopwatch me-1"></i> Time limit</span>
+                    <strong>{{ .Data.Problem.TimeLimitMs }}ms</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-memory me-1"></i> Memory limit</span>
+                    <strong>{{ .Data.Problem.MemoryLimitMb }}MB</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><i class="bi bi-person me-1"></i> Author</span>
+                    <a href="#" class="text-decoration-none fw-bold">Admin</a>
+                </li>
+            </ul>
         </div>
     </div>
 </div>
@@ -141,6 +146,52 @@
                 });
                 
                 el.innerHTML = html;
+                
+                // --- Codeforces Style Sample Formatter ---
+                // Find Sample Input and Sample Output
+                const headers = el.querySelectorAll('h2, h3');
+                let sampleInputPre = null;
+                let sampleOutputPre = null;
+                let sampleInputHeader = null;
+                let sampleOutputHeader = null;
+
+                headers.forEach(h => {
+                    if (h.textContent.trim() === 'Sample Input') {
+                        sampleInputHeader = h;
+                        sampleInputPre = h.nextElementSibling;
+                    }
+                    if (h.textContent.trim() === 'Sample Output') {
+                        sampleOutputHeader = h;
+                        sampleOutputPre = h.nextElementSibling;
+                    }
+                });
+
+                // Transform if both exist and are followed by a pre block
+                if (sampleInputHeader && sampleOutputHeader && sampleInputPre && sampleOutputPre && 
+                    sampleInputPre.tagName === 'PRE' && sampleOutputPre.tagName === 'PRE') {
+                    
+                    const sampleTestDiv = document.createElement('div');
+                    sampleTestDiv.className = 'sample-test';
+                    
+                    const inputDiv = document.createElement('div');
+                    inputDiv.className = 'input';
+                    inputDiv.innerHTML = '<div class="title">Input</div>';
+                    inputDiv.appendChild(sampleInputPre.cloneNode(true));
+                    
+                    const outputDiv = document.createElement('div');
+                    outputDiv.className = 'output';
+                    outputDiv.innerHTML = '<div class="title">Output</div>';
+                    outputDiv.appendChild(sampleOutputPre.cloneNode(true));
+                    
+                    sampleTestDiv.appendChild(inputDiv);
+                    sampleTestDiv.appendChild(outputDiv);
+                    
+                    // Replace the header with the new formatted div and remove the old elements
+                    sampleInputHeader.replaceWith(sampleTestDiv);
+                    sampleInputPre.remove();
+                    sampleOutputHeader.remove();
+                    sampleOutputPre.remove();
+                }
             }
         });
         

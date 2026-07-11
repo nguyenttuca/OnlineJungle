@@ -63,6 +63,8 @@
                                         <span class="badge bg-danger">Wrong Answer</span>
                                         {{ else if eq .Verdict "TLE" }}
                                         <span class="badge bg-warning text-dark">Time Limit</span>
+                                        {{ else if eq .Verdict "OLE" }}
+                                        <span class="badge" style="background-color: #d25b28; color: white;">Output Limit</span>
                                         {{ else if eq .Verdict "MLE" }}
                                         <span class="badge bg-warning text-dark">Memory Limit</span>
                                         {{ else if eq .Verdict "CE" }}

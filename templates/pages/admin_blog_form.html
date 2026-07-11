@@ -1,0 +1,73 @@
+{{ define "page" }}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ if .Data.Blog }}Edit Blog{{ else }}Create New Blog{{ end }}</h2>
+            <a href="/admin/blogs" class="btn btn-outline-secondary">Back to Blogs</a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form method="POST" action="{{ if .Data.Blog }}/admin/blogs/{{ .Data.Blog.ID }}/edit{{ else }}/admin/blogs/new{{ end }}">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ if .Data.Blog }}{{ .Data.Blog.Title }}{{ end }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" value="{{ if .Data.Blog }}{{ .Data.Blog.Slug }}{{ end }}" required>
+                        <div class="form-text">Used for URL: /blogs/my-awesome-post</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="content_md" class="form-label">Content (Markdown)</label>
+                        <textarea class="form-control" id="content_md" name="content_md" rows="10">{{ if .Data.Blog }}{{ .Data.Blog.ContentMd }}{{ end }}</textarea>
+                    </div>
+
+                    <div class="mb-4 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_published" name="is_published" {{ if and .Data.Blog .Data.Blog.IsPublished }}checked{{ end }}>
+                        <label class="form-check-label" for="is_published">Publish</label>
+                        <div class="form-text">Uncheck to save as draft</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">{{ if .Data.Blog }}Save Changes{{ else }}Create Blog{{ end }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EasyMDE for Markdown Editing -->
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var easyMDE = new EasyMDE({ 
+            element: document.getElementById('content_md'),
+            spellChecker: false,
+            forceSync: true,
+            autosave: {
+                enabled: true,
+                uniqueId: "blog_form_autosave",
+                delay: 1000,
+            }
+        });
+        
+        // Auto-generate slug from title
+        const titleInput = document.getElementById('title');
+        const slugInput = document.getElementById('slug');
+        
+        if (!slugInput.value) {
+            titleInput.addEventListener('keyup', function() {
+                const title = titleInput.value;
+                const slug = title.toLowerCase()
+                                .replace(/[^\w\s-]/g, '') // Remove non-word [a-z0-9_], non-whitespace, non-hyphen characters
+                                .replace(/[\s_-]+/g, '-') // Swap any length of whitespace, underscore, hyphen characters with a single -
+                                .replace(/^-+|-+$/g, ''); // Remove leading, trailing -
+                slugInput.value = slug;
+            });
+        }
+    });
+</script>
+{{ end }}

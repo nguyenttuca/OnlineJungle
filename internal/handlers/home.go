@@ -9,7 +9,20 @@ import (
 )
 
 func (env *Env) HomeHandler(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "home.html", nil)
+	ctx := r.Context()
+	blogs, err := env.Queries.GetBlogs(ctx)
+	if err != nil {
+		blogs = []sqlcdb.GetBlogsRow{}
+	}
+
+	// Limit to top 5 recent blogs
+	if len(blogs) > 5 {
+		blogs = blogs[:5]
+	}
+
+	render(w, r, "home.html", map[string]interface{}{
+		"Blogs": blogs,
+	})
 }
 
 func (env *Env) ContestsHandler(w http.ResponseWriter, r *http.Request) {

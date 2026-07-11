@@ -12,21 +12,21 @@
 
     <form method="POST" action="{{ if .Data.Node }}/admin/judges/{{ .Data.Node.ID }}/edit{{ else }}/admin/judges/create{{ end }}" class="card">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
-        <div class="form-group">
+        <div class="mb-3">
             <label>Name:</label>
             <input type="text" name="name" required placeholder="e.g. local-judge-2" value="{{ if .Data.Node }}{{ .Data.Node.Name }}{{ end }}">
             <small>A descriptive name for this judge server.</small>
         </div>
-        <div class="form-group">
+        <div class="mb-3">
             <label>Base URL:</label>
             <input type="url" name="base_url" required placeholder="http://192.168.1.100:8081" value="{{ if .Data.Node }}{{ .Data.Node.BaseUrl }}{{ end }}">
             <small>The URL where the judge API is hosted.</small>
         </div>
-        <div class="form-group">
+        <div class="mb-3">
             <label>API Key (Optional):</label>
             <input type="password" name="api_key" placeholder="Leave blank if no auth" value="{{ if .Data.Node }}{{ .Data.Node.ApiKeyEncrypted }}{{ end }}">
         </div>
-        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+        <div class="mb-3" style="display: flex; align-items: center; gap: 10px;">
             <input type="checkbox" name="is_active" id="is_active" {{ if .Data.Node }}{{ if .Data.Node.IsActive }}checked{{ end }}{{ else }}checked{{ end }}>
             <label for="is_active" style="margin: 0;">Active (Receive submissions)</label>
         </div>

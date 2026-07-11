@@ -32,6 +32,10 @@ func SetupRoutes(r chi.Router, env *Env) {
 
 		r.Get("/submissions", env.SubmissionListHandler)
 		r.Get("/submissions/{id}", env.SubmissionDetailHandler)
+
+		// Public Blog Routes
+		r.Get("/blogs", env.BlogListHandler)
+		r.Get("/blogs/{slug}", env.BlogDetailHandler)
 	})
 
 	// Protected routes (requires auth)
@@ -62,7 +66,15 @@ func SetupRoutes(r chi.Router, env *Env) {
 		r.Post("/admin/contests/{id}/edit", env.AdminEditContestPostHandler)
 		r.Post("/admin/contests/{id}/problems/add", env.AdminAddContestProblemPostHandler)
 		r.Post("/admin/contests/{id}/problems/remove", env.AdminRemoveContestProblemPostHandler)
-		r.Get("/admin/blogs/create", env.AdminCreateBlogGetHandler)
+
+		// Admin Blog routes
+		r.Get("/admin/blogs", env.AdminBlogsHandler)
+		r.Get("/admin/blogs/new", env.AdminBlogNewGetHandler)
+		r.Post("/admin/blogs/new", env.AdminBlogNewPostHandler)
+		r.Get("/admin/blogs/{id}/edit", env.AdminBlogEditGetHandler)
+		r.Post("/admin/blogs/{id}/edit", env.AdminBlogEditPostHandler)
+		r.Post("/admin/blogs/{id}/delete", env.AdminBlogDeleteHandler)
+
 		r.Get("/admin/groups/create", env.AdminCreateGroupGetHandler)
 		r.Get("/admin/announcements/create", env.AdminCreateAnnouncementGetHandler)
 

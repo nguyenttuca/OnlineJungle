@@ -1,0 +1,7 @@
+DROP INDEX IF EXISTS idx_blogs_published;
+DROP INDEX IF EXISTS idx_blogs_slug;
+
+ALTER TABLE blogs DROP CONSTRAINT IF EXISTS blogs_slug_key;
+ALTER TABLE blogs DROP COLUMN IF EXISTS slug;
+ALTER TABLE blogs DROP COLUMN IF EXISTS is_published;
+ALTER TABLE blogs DROP COLUMN IF EXISTS updated_at;

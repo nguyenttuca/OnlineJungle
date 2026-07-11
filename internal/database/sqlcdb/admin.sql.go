@@ -33,30 +33,6 @@ func (q *Queries) CreateAnnouncement(ctx context.Context, arg CreateAnnouncement
 	return i, err
 }
 
-const createBlog = `-- name: CreateBlog :one
-INSERT INTO blogs (author_id, title, content_md)
-VALUES ($1, $2, $3) RETURNING id, author_id, title, content_md, created_at
-`
-
-type CreateBlogParams struct {
-	AuthorID  int64  `json:"author_id"`
-	Title     string `json:"title"`
-	ContentMd string `json:"content_md"`
-}
-
-func (q *Queries) CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, error) {
-	row := q.db.QueryRow(ctx, createBlog, arg.AuthorID, arg.Title, arg.ContentMd)
-	var i Blog
-	err := row.Scan(
-		&i.ID,
-		&i.AuthorID,
-		&i.Title,
-		&i.ContentMd,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
 const createGroup = `-- name: CreateGroup :one
 INSERT INTO groups (name, description)
 VALUES ($1, $2) RETURNING id, name, description, created_at

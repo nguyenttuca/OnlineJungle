@@ -28,11 +28,14 @@ type Announcement struct {
 }
 
 type Blog struct {
-	ID        int64              `json:"id"`
-	AuthorID  int64              `json:"author_id"`
-	Title     string             `json:"title"`
-	ContentMd string             `json:"content_md"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ID          int64              `json:"id"`
+	AuthorID    int64              `json:"author_id"`
+	Title       string             `json:"title"`
+	ContentMd   string             `json:"content_md"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Slug        string             `json:"slug"`
+	IsPublished bool               `json:"is_published"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Contest struct {

@@ -1,0 +1,21 @@
+{{ define "page" }}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h2>All Blogs & News</h2>
+</div>
+
+{{ if .Data.Blogs }}
+    <div class="list-group">
+        {{ range .Data.Blogs }}
+        <a href="/blogs/{{ .Slug }}" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ .Title }}</h5>
+                <small class="text-muted">{{ .CreatedAt.Format "Jan 02, 2006" }}</small>
+            </div>
+            <p class="mb-1 text-muted small">By {{ .AuthorUsername }}</p>
+        </a>
+        {{ end }}
+    </div>
+{{ else }}
+    <div class="alert alert-info">No blogs published yet.</div>
+{{ end }}
+{{ end }}

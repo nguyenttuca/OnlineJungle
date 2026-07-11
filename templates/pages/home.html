@@ -1,9 +1,37 @@
 {{ define "page" }}
-<div class="hero">
-    <h1>Welcome to Top OJ</h1>
-    <p>A fast, robust, and minimal Online Judge powered by Go.</p>
-    <div class="actions">
-        <a href="/problems" class="btn btn-primary">Solve Problems</a>
+<div class="hero mb-5 pb-3 border-bottom">
+    <h1 class="display-4">Welcome to Top OJ</h1>
+    <p class="lead">TopLearn - toplearn.vn</p>
+    <div class="actions mt-4">
+        <a href="/problems" class="btn btn-primary btn-lg">Solve Problems</a>
+        <a href="/contests" class="btn btn-outline-secondary btn-lg ms-2">View Contests</a>
     </div>
+</div>
+
+<div class="blogs-section mt-5">
+    <h3 class="mb-4 d-flex justify-content-between align-items-center">
+        Latest News & Blogs
+        <a href="/blogs" class="btn btn-sm btn-outline-primary">View All</a>
+    </h3>
+    {{ if .Data.Blogs }}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {{ range .Data.Blogs }}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="/blogs/{{ .Slug }}" class="text-decoration-none text-reset">{{ .Title }}</a>
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted small">
+                            By {{ .AuthorUsername }} on {{ .CreatedAt.Format "Jan 02, 2006" }}
+                        </h6>
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+    {{ else }}
+        <div class="alert alert-info">No blogs published yet.</div>
+    {{ end }}
 </div>
 {{ end }}

@@ -1,0 +1,37 @@
+{{ define "page" }}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/blogs">Blogs</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ .Data.Blog.Title }}</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-body p-5">
+                <h1 class="card-title fw-bold mb-3">{{ .Data.Blog.Title }}</h1>
+                <h6 class="card-subtitle mb-4 text-muted">
+                    <i class="fas fa-user-edit me-1"></i> {{ .Data.Blog.AuthorUsername }} 
+                    <span class="mx-2">|</span> 
+                    <i class="far fa-calendar-alt me-1"></i> {{ .Data.Blog.CreatedAt.Format "Jan 02, 2006 at 15:04" }}
+                </h6>
+                <hr class="mb-4">
+                <div class="markdown-body">
+                    {{ .Data.HTMLContent }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Add some basic styles to make markdown look better */
+.markdown-body img { max-width: 100%; height: auto; }
+.markdown-body pre { background-color: var(--bg-card-header); padding: 1rem; border-radius: 0.375rem; overflow-x: auto; }
+.markdown-body blockquote { border-left: 4px solid var(--border-color); padding-left: 1rem; color: var(--text-muted); }
+.markdown-body table { width: 100%; margin-bottom: 1rem; border-collapse: collapse; }
+.markdown-body th, .markdown-body td { padding: 0.5rem; border: 1px solid var(--border-color); }
+</style>
+{{ end }}
