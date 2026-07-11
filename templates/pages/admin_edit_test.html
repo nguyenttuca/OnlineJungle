@@ -1,0 +1,90 @@
+{{ define "page" }}
+<div class="container pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Sửa dữ liệu (Test Cases) - {{ .Data.Problem.Title}}</h2>
+        <a href="/admin/problems/{{ .Data.Problem.Slug}}/edit" class="btn btn-outline-secondary">Trở về</a>
+    </div>
+
+    {{ if .Data.Error }}
+    <div class="alert alert-danger">{{ .Data.Error }}</div>
+    {{ end }}
+    {{ if .Data.Success }}
+    <div class="alert alert-success">{{ .Data.Success }}</div>
+    {{ end }}
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Import Test Cases (ZIP)</h5>
+        </div>
+        <div class="card-body">
+            <form action="/admin/problems/{{ .Data.Problem.Slug}}/tests" enctype="multipart/form-data" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+                <div class="mb-3">
+                    <label for="problem-data-zipfile" class="form-label">Tập tin dữ liệu nén dạng ZIP:</label>
+                    <input class="form-control" type="file" id="problem-data-zipfile" name="problem-data-zipfile" accept=".zip" required>
+                    <div class="form-text">
+                        Hỗ trợ Input: .in, .inp, .input | Output: .out, .ans, .answer.<br>
+                        Tự động ghép cặp theo tên file (VD: 1.in & 1.out).<br>
+                        Tự động nhận diện Sample Test (thêm chữ "sample" vào tên file).<br>
+                        File ZIP giới hạn ≤ 100MB. Kích thước file uncompressed ≤ 20MB/file.
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="btn-import">Import ZIP</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Danh sách Test Cases hiện tại ({{ if .Data.TestCases }}{{ len .Data.TestCases }}{{ else }}0{{ end }})</h5>
+            {{ if .Data.Success }}
+            <span class="badge bg-success">Imported Successfully</span>
+            {{ end }}
+        </div>
+        <div class="card-body p-0">
+            {{ if .Data.TestCases }}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Trạng thái</th>
+                            <th>Input (Bytes)</th>
+                            <th>Output (Bytes)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range $idx, $tc := .Data.TestCases }}
+                        <tr>
+                            <td><strong>#{{ add $idx 1 }}</strong></td>
+                            <td>
+                                {{ if $tc.IsSample }}
+                                <span class="badge bg-info text-dark">Sample</span>
+                                {{ else }}
+                                <span class="badge bg-secondary">Hidden</span>
+                                {{ end }}
+                            </td>
+                            <td>{{ len $tc.Input }} bytes</td>
+                            <td>{{ len $tc.ExpectedOutput }} bytes</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+            {{ else }}
+            <div class="p-4 text-center">
+                <p class="text-muted mb-0">Chưa có dữ liệu. Vui lòng tải lên file ZIP.</p>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector("form").addEventListener("submit", function() {
+        var btn = document.getElementById("btn-import");
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+        btn.disabled = true;
+    });
+</script>
+{{ end }}

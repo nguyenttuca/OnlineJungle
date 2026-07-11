@@ -1,0 +1,124 @@
+{{ define "page" }}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="display:inline">Chỉnh sửa kỳ thi: {{ .Data.Contest.Title }}</h2>
+        <a href="/contests/{{ .Data.Contest.ID }}" class="btn btn-outline-primary btn-sm">Xem kỳ thi</a>
+    </div>
+    <hr>
+    
+    {{ if .Data.Error }}
+    <div class="alert alert-danger">{{ .Data.Error }}</div>
+    {{ end }}
+    {{ if .Query.success }}
+    <div class="alert alert-success">Cập nhật kỳ thi thành công!</div>
+    {{ end }}
+
+    <div class="row">
+        <!-- Cột trái: Form chỉnh sửa thông tin -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="mb-0">Thông tin kỳ thi</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/contests/{{ .Data.Contest.ID }}/edit" method="post" style="display: flex; flex-direction: column;">
+                        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+                        
+                        <div class="mb-3">
+                            <label class="form-label required" for="id_name">Tên kỳ thi:</label>
+                            <input class="form-control" id="id_name" maxlength="100" name="name" type="text" value="{{ .Data.Contest.Title }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required" for="id_start_time">Thời gian bắt đầu:</label>
+                            <input class="form-control" id="id_start_time" name="start_time" type="datetime-local" value="{{ .Data.StartAtStr }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required" for="id_end_time">Thời gian kết thúc:</label>
+                            <input class="form-control" id="id_end_time" name="end_time" type="datetime-local" value="{{ .Data.EndAtStr }}" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 mt-3">Lưu thay đổi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Quản lý Bài tập -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h5 class="mb-0">Bài tập trong kỳ thi</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Danh sách bài hiện tại -->
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Label</th>
+                                    <th>Bài tập</th>
+                                    <th>Điểm</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Data.ContestProblems }}
+                                <tr>
+                                    <td><strong>{{ .Label }}</strong></td>
+                                    <td>{{ .Title }}</td>
+                                    <td>{{ .Points }}</td>
+                                    <td>
+                                        <form action="/admin/contests/{{ $.Data.Contest.ID }}/problems/remove" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ $.CsrfToken }}">
+                                            <input type="hidden" name="problem_id" value="{{ .ID }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {{ else }}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Chưa có bài tập nào.</td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <hr>
+
+                    <!-- Form thêm bài mới -->
+                    <h6 class="mb-3">Thêm bài tập mới</h6>
+                    <form action="/admin/contests/{{ .Data.Contest.ID }}/problems/add" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+                        
+                        <div class="mb-2">
+                            <label class="form-label" for="problem_id">Chọn bài tập:</label>
+                            <select class="form-select" name="problem_id" id="problem_id" required>
+                                <option value="" disabled selected>-- Chọn bài tập --</option>
+                                {{ range .Data.AllProblems }}
+                                <option value="{{ .ID }}">{{ .Title }} ({{ .Slug }})</option>
+                                {{ end }}
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label" for="label">Label (VD: A, B, C):</label>
+                                <input type="text" class="form-control" name="label" id="label" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="points">Điểm số:</label>
+                                <input type="number" class="form-control" name="points" id="points" value="100" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Thêm vào kỳ thi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

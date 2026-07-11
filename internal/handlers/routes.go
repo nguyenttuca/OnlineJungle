@@ -1,0 +1,77 @@
+package handlers
+
+import (
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tuantu/oj-web/internal/database/sqlcdb"
+)
+
+type Env struct {
+	Pool    *pgxpool.Pool
+	Queries *sqlcdb.Queries
+}
+
+func SetupRoutes(r chi.Router, env *Env) {
+	// Public routes
+	r.Group(func(r chi.Router) {
+		r.Get("/", env.HomeHandler)
+		r.Get("/problems", env.ProblemListHandler)
+		r.Get("/problems/{slug}", env.ProblemDetailHandler)
+		r.Get("/problems/{slug}/submit", env.SubmitGetHandler)
+		r.With(SubmitLimiter.Middleware).Post("/problems/{slug}/submit", env.SubmitPostHandler)
+		r.Get("/contests", env.ContestsHandler)
+		r.Get("/contests/{id}", env.ContestDetailHandler)
+		r.Get("/contests/{id}/problems/{slug}", env.ContestProblemDetailHandler)
+		r.Get("/contests/{id}/problems/{slug}/submit", env.ContestSubmitGetHandler)
+		r.With(SubmitLimiter.Middleware).Post("/contests/{id}/problems/{slug}/submit", env.ContestSubmitPostHandler)
+		r.Get("/users", env.UsersHandler)
+		r.Get("/users/{username}", env.UserProfileHandler)
+		r.Get("/login", env.LoginGetHandler)
+		r.With(LoginLimiter.Middleware).Post("/login", env.LoginPostHandler)
+		r.Get("/logout", env.LogoutHandler)
+
+		r.Get("/submissions", env.SubmissionListHandler)
+		r.Get("/submissions/{id}", env.SubmissionDetailHandler)
+	})
+
+	// Protected routes (requires auth)
+	r.Group(func(r chi.Router) {
+		r.Use(RequireAuth)
+		r.Post("/problems/{slug}/submit", env.SubmitPostHandler)
+	})
+
+	// Admin routes
+	r.Group(func(r chi.Router) {
+		r.Use(RequireAuth)
+		r.Use(RequireAdmin)
+		r.Get("/admin", env.AdminDashboardHandler)
+		r.Get("/admin/users/create", env.AdminCreateUserGetHandler)
+		r.Post("/admin/users/create", env.AdminCreateUserPostHandler)
+
+		r.Get("/admin/problems/create", env.AdminCreateProblemGetHandler)
+		r.Post("/admin/problems/create", env.AdminCreateProblemPostHandler)
+
+		r.Get("/admin/problems/{slug}/edit", env.AdminEditProblemGetHandler)
+		r.Post("/admin/problems/{slug}/edit", env.AdminEditProblemPostHandler)
+		r.Get("/admin/problems/{slug}/tests", env.AdminEditTestGetHandler)
+		r.Post("/admin/problems/{slug}/tests", env.AdminEditTestPostHandler)
+
+		r.Get("/admin/contests/create", env.AdminCreateContestGetHandler)
+		r.Post("/admin/contests/create", env.AdminCreateContestPostHandler)
+		r.Get("/admin/contests/{id}/edit", env.AdminEditContestGetHandler)
+		r.Post("/admin/contests/{id}/edit", env.AdminEditContestPostHandler)
+		r.Post("/admin/contests/{id}/problems/add", env.AdminAddContestProblemPostHandler)
+		r.Post("/admin/contests/{id}/problems/remove", env.AdminRemoveContestProblemPostHandler)
+		r.Get("/admin/blogs/create", env.AdminCreateBlogGetHandler)
+		r.Get("/admin/groups/create", env.AdminCreateGroupGetHandler)
+		r.Get("/admin/announcements/create", env.AdminCreateAnnouncementGetHandler)
+
+		// Judge Nodes
+		r.Get("/admin/judges", env.AdminJudgesListHandler)
+		r.Get("/admin/judges/create", env.AdminJudgeCreateGetHandler)
+		r.Post("/admin/judges/create", env.AdminJudgeCreatePostHandler)
+		r.Get("/admin/judges/{id}/edit", env.AdminJudgeEditGetHandler)
+		r.Post("/admin/judges/{id}/edit", env.AdminJudgeEditPostHandler)
+		r.Post("/admin/judges/{id}/delete", env.AdminJudgeDeletePostHandler)
+	})
+}

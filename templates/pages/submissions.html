@@ -1,0 +1,41 @@
+{{ define "page" }}
+<div class="container">
+    <h2>Submissions</h2>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Problem ID</th>
+                <th>User ID</th>
+                <th>Language</th>
+                <th>Status</th>
+                <th>Verdict</th>
+                <th>Time (ms)</th>
+                <th>Memory (KB)</th>
+                <th>Submitted At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Data.Submissions }}
+            <tr>
+                <td><a href="/submissions/{{ .ID }}">#{{ .ID }}</a></td>
+                <td>{{ .ProblemID }}</td>
+                <td>{{ .UserID }}</td>
+                <td>{{ .Language }}</td>
+                <td>{{ .Status }}</td>
+                <td><strong>{{ .Verdict }}</strong></td>
+                <td>{{ .TimeMs }}</td>
+                <td>{{ .MemoryKb }}</td>
+                <td>{{ .SubmittedAt.Time.Format "2006-01-02 15:04:05" }}</td>
+            </tr>
+            {{ end }}
+            {{ if not .Submissions }}
+            <tr>
+                <td colspan="9" style="text-align: center;">No submissions found.</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+{{ end }}

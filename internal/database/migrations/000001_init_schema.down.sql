@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS contest_problems;
+DROP TABLE IF EXISTS contests;
+DROP TABLE IF EXISTS submission_test_results;
+DROP TABLE IF EXISTS submissions;
+DROP TABLE IF EXISTS judge_nodes;
+DROP TABLE IF EXISTS test_cases;
+DROP TABLE IF EXISTS subtasks;
+DROP TABLE IF EXISTS problems;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS sessions;

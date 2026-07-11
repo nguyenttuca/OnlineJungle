@@ -1,0 +1,88 @@
+{{ define "page" }}
+<div class="container">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <img src="https://ui-avatars.com/api/?name={{ .Data.ProfileUser.DisplayName }}&background=random&size=128" alt="avatar" class="rounded-circle mb-3">
+                    <h4 class="card-title">{{ .Data.ProfileUser.Username }}</h4>
+                    <p class="text-muted">{{ .Data.ProfileUser.DisplayName }}</p>
+                    {{ if eq .Data.ProfileUser.Role "admin" }}
+                    <span class="badge bg-warning text-dark mb-2">Administrator</span>
+                    {{ end }}
+                    <hr>
+                    <div class="d-flex justify-content-between text-center mt-3">
+                        <div>
+                            <h5 class="mb-0 text-success">{{ .Data.SolvedCount }}</h5>
+                            <small class="text-muted">Solved</small>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ len .Data.RecentSubmissions }}</h5>
+                            <small class="text-muted">Submissions</small>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">--</h5>
+                            <small class="text-muted">Rank</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Recent Submissions -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <h5 class="mb-0">Recent Submissions</h5>
+                </div>
+                <div class="card-body">
+                    {{ if .Data.RecentSubmissions }}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Problem</th>
+                                    <th>Language</th>
+                                    <th>Verdict</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Data.RecentSubmissions }}
+                                <tr>
+                                    <td><a href="/submissions/{{ .ID }}">#{{ .ID }}</a></td>
+                                    <td>{{ .ProblemID }}</td>
+                                    <td><span class="badge bg-secondary">{{ .Language }}</span></td>
+                                    <td>
+                                        {{ if eq .Verdict "AC" }}
+                                        <span class="badge bg-success">Accepted</span>
+                                        {{ else if eq .Verdict "WA" }}
+                                        <span class="badge bg-danger">Wrong Answer</span>
+                                        {{ else if eq .Verdict "TLE" }}
+                                        <span class="badge bg-warning text-dark">Time Limit</span>
+                                        {{ else if eq .Verdict "MLE" }}
+                                        <span class="badge bg-warning text-dark">Memory Limit</span>
+                                        {{ else if eq .Verdict "CE" }}
+                                        <span class="badge bg-secondary">Compile Error</span>
+                                        {{ else }}
+                                        <span class="badge bg-info text-dark">{{ .Verdict }}</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>{{ .TimeMs }} ms</td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{ else }}
+                    <p class="text-muted">No recent submissions.</p>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

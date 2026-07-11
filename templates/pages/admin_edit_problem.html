@@ -1,0 +1,139 @@
+{{ define "page" }}
+<div class="container">
+    <h2 style="display:inline">Sửa bài toán: {{ .Data.Problem.Title}}</h2>
+    <a href="/admin/problems/{{ .Data.Problem.Slug}}/tests" class="button" style="float: right; margin-left: 10px; background-color: #2196f3;">Sang trang sửa Test</a>
+    <hr>
+    {{ if .Data.Error }}
+    <div style="color: red; margin-bottom: 15px;">{{ .Data.Error }}</div>
+    {{ end }}
+    <div id="content-body">
+
+<form action="/admin/problems/{{ .Data.Problem.Slug}}/edit" class="form-area" method="post" style="display: flex; justify-content: center; flex-direction: column;">
+<input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+<table class="django-as-table"><tbody><tr class="required"><th><label class="required" for="id_code">Mã bài:</label></th><td><input id="id_code" maxlength="32" name="code"  type="text" value="{{ .Data.Problem.Slug}}" required=""><br/><span class="helptext">Mã bài, ví dụ: voi19_post</span></td></tr>
+<tr class="required"><th><label class="required" for="id_name">Tên bài toán:</label></th><td><input id="id_name" maxlength="100" name="name"  type="text" value="{{ .Data.Problem.Title}}" required=""><br/><span class="helptext">Tên đầy đủ của bài, được hiển thị trong danh sách bài. Ví dụ: VOI19 - A cộng B</span></td></tr>
+<tr class="required"><th><label class="required" for="id_time_limit">Giới hạn thời gian:</label></th><td><input id="id_time_limit" name="time_limit"  step="any" type="number" value="{{ .Data.TimeLimitSec}}"/><br/><span class="helptext">Giới hạn thời gian (tính bằng giây) cho bài tập này. Phần lẻ giây (chẳng hạn 1.5) cũng được hỗ trợ.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_memory_limit">Giới hạn bộ nhớ:</label></th><td><input id="id_memory_limit" min="0" name="memory_limit"  type="number" value="{{ .Data.MemoryLimitKb}}"/><br/><span class="helptext">Giới hạn bộ nhớ theo KILOBYTES. Muốn bài 256MB thì điền 262144.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_batch_type">Batch Type:</label></th><td><select id="id_batch_type" name="batch_type">
+<option selected="" value="sum">Sum</option>
+<option value="min">Min</option>
+</select><br/><span class="helptext">Determines how batch scoring is calculated.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_points">Điểm:</label></th><td><input id="id_points" name="points"  step="any" type="number" value="10"/><br/><span class="helptext">Điểm của bài, từ 0 tới 2. Có thể xấp xỉ điểm như sau: bài có điểm 0.5 sẽ khó như bài 1 thi HSG QG; 1 điểm = bài 2; 1.5 điểm = bài 3.</span></td></tr>
+<tr><th><label for="id_partial">Cho phép nhận điểm với từng test đúng:</label></th><td><input checked="" id="id_partial" name="partial" type="checkbox"/></td></tr>
+<tr><th><label for="id_source">Nguồn bài tập:</label></th><td><input id="id_source" maxlength="200" name="source" type="text"/><br/><span class="helptext">Nguồn của bài tập. Hãy ghi nguồn của bài tập nếu có</span></td></tr>
+<tr><th><label for="id_mirror_of">Mirror dữ liệu test từ:</label></th><td><select aria-hidden="true" class="django-select2 django-select2-heavy select2-hidden-accessible" data-ajax--cache="true" data-ajax--type="GET" data-ajax--url="/judge-select2/mirror-problem/" data-allow-clear="true" data-field_id="MTMzMjg3NDY5MjQyMTI4:1wiGRw:AYLqRcKesWniqFN9MjIx1q3_rdJRSjfRBfM8tH-98rk" data-minimum-input-length="0" data-placeholder="" data-theme="dmoj" id="id_mirror_of" name="mirror_of" style="width: 100%" tabindex="-1">
+<option selected="" value="">---------</option>
+</select><br/><span class="helptext">Dùng archive test của bài khác nhưng vẫn giữ config/init.yml riêng của bài này.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_types">Dạng đề:</label></th><td><select aria-hidden="true" class="django-select2 select2-hidden-accessible" data-allow-clear="false" data-minimum-input-length="0" data-theme="dmoj" id="id_types" multiple="" name="types"  tabindex="-1">
+<option value="52">2-sat</option>
+<option value="30">adhoc</option>
+<option value="28">backtracking</option>
+<option value="11">bfs</option>
+<option value="4">Bignum</option>
+<option value="41">binary-lifting</option>
+<option value="6">binary-search</option>
+<option value="8">bitmasks</option>
+<option value="7">brute-force</option>
+<option value="53">chinese remainder theorem</option>
+<option selected="" value="1">Chưa phân loại</option>
+<option value="25">combinatorics</option>
+<option value="55">communication</option>
+<option value="33">constructive-algorithms</option>
+<option value="9">data-structures</option>
+<option value="24">Đếm</option>
+<option value="16">dfs and similar</option>
+<option value="32">difference-array</option>
+<option value="12">Dijkstra</option>
+<option value="42">divide-and-conquer</option>
+<option value="3">dp</option>
+<option value="29">dp-digit</option>
+<option value="10">dp-tree</option>
+<option value="47">dsu</option>
+<option value="50">flows</option>
+<option value="46">games</option>
+<option value="40">geometry</option>
+<option value="51">graph matching</option>
+<option value="35">graphs</option>
+<option value="14">greedy</option>
+<option value="48">hashing</option>
+<option value="21">heuristics</option>
+<option value="23">implementation</option>
+<option value="54">interactive</option>
+<option value="2">math</option>
+<option value="17">matrices</option>
+<option value="39">matrix-exponentiation</option>
+<option value="43">meet-in-the-middle</option>
+<option value="20">mo's-algorithm</option>
+<option value="34">number-theory</option>
+<option value="18">prefix-sum</option>
+<option value="49">probabilities</option>
+<option value="56">schedules</option>
+<option value="13">segment-tree</option>
+<option value="38">shortest-paths</option>
+<option value="22">Số học</option>
+<option value="36">sortings</option>
+<option value="27">spanning-tree</option>
+<option value="26">Stack</option>
+<option value="15">STL</option>
+<option value="44">string-suffix-structures</option>
+<option value="19">strings</option>
+<option value="45">sweep-line</option>
+<option value="57">ternary search</option>
+<option value="37">trees</option>
+<option value="5">two-pointers</option>
+<option value="31">Xử lý mảng</option>
+</select><br/><span class="helptext">Dạng của bài tập, được hiển thị trong trang bài.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_group">Nhóm bài:</label></th><td><select aria-hidden="true" class="django-select2 select2-hidden-accessible" data-allow-clear="false" data-minimum-input-length="0" data-theme="dmoj" id="id_group" name="group"  tabindex="-1">
+<option value="">---------</option>
+<option value="3">Chọn ĐT</option>
+<option selected="" value="1">Chưa phân loại</option>
+<option value="15">Clue Contest</option>
+<option value="25">clue_</option>
+<option value="13">CNH</option>
+<option value="21">Đề xuất DHBB</option>
+<option value="23">Đề xuất THHV</option>
+<option value="5">duong3982oj Contest</option>
+<option value="19">Duyên hải Bắc Bộ</option>
+<option value="8">HSG THCS</option>
+<option value="9">HSG THPT</option>
+<option value="10">HSG Trường</option>
+<option value="22">HSGQG</option>
+<option value="4">MTTN</option>
+<option value="11">noodles0428</option>
+<option value="17">OI</option>
+<option value="2">PreVOI</option>
+<option value="12">SQRT Contest</option>
+<option value="20">Tiểu học</option>
+<option value="16">Tin học trẻ</option>
+<option value="14">TN THPT</option>
+<option value="18">Trại hè Hùng Vương</option>
+<option value="24">Trại hè Phương Nam</option>
+<option value="6">Trainning</option>
+<option value="7">TS10</option>
+</select><br/><span class="helptext">Nhóm của bài tập, hiển thị trong danh sách bài tập.</span></td></tr>
+<tr class="required"><th><label class="required" for="id_testcase_visibility_mode">Chế độ hiển thị testcase:</label></th><td><select aria-hidden="true" class="django-select2 select2-hidden-accessible" data-allow-clear="false" data-minimum-input-length="0" data-theme="dmoj" id="id_testcase_visibility_mode" name="testcase_visibility_mode" tabindex="-1">
+<option selected="" value="O">Chỉ tác giả có thể xem</option>
+<option value="C">Hiển thị khi không ở trong kỳ thi</option>
+<option value="A">Có thể xem</option>
+</select></td></tr>
+<tr><th><label for="id_description">Bài toán:</label></th><td>
+<textarea id="id_description" name="description">{{ .Data.Problem.StatementMd}}</textarea></td></tr>
+<tr><th><label for="id_testers">Testers:</label></th><td><select aria-hidden="true" class="django-select2 django-select2-heavy select2-hidden-accessible" data-ajax--cache="true" data-ajax--type="GET" data-ajax--url="/judge-select2/profile/" data-allow-clear="true" data-field_id="MTMzMjg3NDU2ODEzOTY4:1wiGRw:BlNDU-u2ma-bCUa6S1YV4-3JXbcp4mm5i9Gwk_vaaaw" data-minimum-input-length="0" data-placeholder="" data-theme="dmoj" id="id_testers" multiple="" name="testers" style="width: 100%" tabindex="-1">
+</select><br/><span class="helptext">Những người này có thể xem bài tập riêng tư nhưng không thể chỉnh sửa chúng. Có thể gán một danh sách các username vào đây thay vì gõ tay (phân cách bằng khoảng trắng hoặc dấu phẩy).</span></td></tr></tbody></table>
+<hr/>
+<div style="display: flex; justify-content: flex-end;"><input class="button" type="submit" value="Lưu Thay Đổi"/></div>
+</form>
+<link href="https://unpkg.com/easymde/dist/easymde.min.css" rel="stylesheet"/>
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if(document.getElementById('id_description')) {
+            new EasyMDE({element: document.getElementById('id_description')});
+        }
+    });
+</script>
+
+
+</div>
+</div>
+{{ end }}

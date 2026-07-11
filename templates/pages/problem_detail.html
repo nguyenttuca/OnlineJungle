@@ -1,0 +1,155 @@
+{{ define "page" }}
+<div class="problem-container">
+    <div class="problem-statement">
+        <h2 style="margin-top: 0; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color);">{{ .Data.Problem.Title }}</h2>
+
+        <div class="markdown-content" style="margin-top: 1.5em; margin-bottom: 2em; font-size: 1.05rem;">
+            {{ .Data.Problem.StatementMd }}
+        </div>
+
+        {{ if .Data.Problem.InputDesc }}
+        <h3 style="padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color); margin-top: 1.5em;">Input Specification</h3>
+        <div class="markdown-content" style="margin-top: 1em; font-size: 1.05rem;">
+            {{ .Data.Problem.InputDesc }}
+        </div>
+        {{ end }}
+
+        {{ if .Data.Problem.OutputDesc }}
+        <h3 style="padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color); margin-top: 1.5em;">Output Specification</h3>
+        <div class="markdown-content" style="margin-top: 1em; font-size: 1.05rem;">
+            {{ .Data.Problem.OutputDesc }}
+        </div>
+        {{ end }}
+
+        {{ if .Data.Problem.ConstraintsDesc }}
+        <h3 style="padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color); margin-top: 1.5em;">Constraints</h3>
+        <div class="markdown-content" style="margin-top: 1em; font-size: 1.05rem;">
+            {{ .Data.Problem.ConstraintsDesc }}
+        </div>
+        {{ end }}
+    </div>
+    <div class="problem-sidebar" style="max-width: 250px; min-width: 200px;">
+        {{ if .Data.ContestID }}
+            {{ if not .Data.CanSubmit }}
+            <div class="alert alert-warning p-2 text-center" style="font-size: 0.85em; margin-bottom: 10px;">
+                Ngoài khung giờ thi — bài nộp sẽ được chấm nhưng không tính vào bảng xếp hạng.
+            </div>
+            {{ end }}
+            <a href="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary btn-block mb-3" style="font-size: 1.1rem; padding: 10px; width: 100%; box-sizing: border-box; text-align: center;">Submit solution</a>
+        {{ else }}
+            <a href="/problems/{{ .Data.Problem.Slug }}/submit" class="btn btn-primary btn-block mb-3" style="font-size: 1.1rem; padding: 10px; width: 100%; box-sizing: border-box; text-align: center;">Submit solution</a>
+        {{ end }}
+        
+        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
+
+        <div style="margin-bottom: 0.5em;"><a href="/submissions?problem={{ .Data.Problem.Slug }}" style="text-decoration: none; color: var(--primary-color);">All submissions</a></div>
+        <div style="margin-bottom: 0.5em;"><a href="/submissions?problem={{ .Data.Problem.Slug }}&best=1" style="text-decoration: none; color: var(--primary-color);">Best submissions</a></div>
+
+        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
+
+        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #666;"><i class="fa fa-check fa-fw"></i> <strong>Points:</strong></span>
+            <span>100</span>
+        </div>
+        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #666;"><i class="fa fa-clock-o fa-fw"></i> <strong>Time limit:</strong></span>
+            <span>{{ .Data.Problem.TimeLimitMs }}ms</span>
+        </div>
+        <div class="problem-info-entry" style="padding-top: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #666;"><i class="fa fa-server fa-fw"></i> <strong>Memory limit:</strong></span>
+            <span>{{ .Data.Problem.MemoryLimitMb }}M</span>
+        </div>
+        
+        <hr style="margin: 1em 0; border: 0; border-top: 1px solid var(--border-color);">
+        
+        <div class="problem-info-entry" style="padding-top: 0.5em;">
+            <span style="color: #666;"><i class="fa fa-pencil-square-o fa-fw"></i> <strong>Author:</strong></span>
+            <div style="padding-left: 1.5em; color: var(--primary-color);"><a href="#">Admin</a></div>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<!-- Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- MathJax for LaTeX parsing -->
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const markdownElements = document.querySelectorAll('.markdown-content');
+        
+        // Pattern from texme.js to correctly tokenize MathJax blocks and protect them
+        const pattern = [
+            '\\\\begin{(.*?)}([\\s\\S]*?)\\\\end{\\1}', // \begin{..}..\end{..}
+            '\\\\\\[[\\s\\S]*?\\\\\\]', // \[..\]
+            '\\\\\\([\\s\\S]*?\\\\\\)', // \(..\)
+            '\\\\\\$', // \$ (literal dollar escaped)
+            '\\$\\$(?:[^\\\\]|\\\\.)*?\\$\\$', // $$..$$
+            '\\$(?:[^$\\\\]|\\\\.)+?\\$', // $..$
+        ].join('|');
+        const re = new RegExp(pattern, 'g');
+
+        markdownElements.forEach(el => {
+            let s = el.textContent.trim();
+            if (s) {
+                const mathBlocks = [];
+                let counter = 0;
+                let nextIndex = 0;
+                let result;
+                let processedText = "";
+                
+                while ((result = re.exec(s)) !== null) {
+                    // Text before the math block
+                    if (result.index > nextIndex) {
+                        processedText += s.substring(nextIndex, result.index);
+                    }
+                    
+                    const match = result[0];
+                    const id = `::MASK_${counter++}::`;
+                    mathBlocks.push({ id, text: match });
+                    processedText += id;
+                    
+                    nextIndex = re.lastIndex;
+                }
+                
+                // Trailing text
+                if (s.length > nextIndex) {
+                    processedText += s.substring(nextIndex);
+                }
+                
+                // Parse markdown content
+                let html = marked.parse(processedText);
+                
+                // Restore math blocks
+                mathBlocks.forEach(block => {
+                    html = html.replace(block.id, block.text);
+                });
+                
+                el.innerHTML = html;
+            }
+        });
+        
+        // Wait for MathJax to be ready to typeset the newly injected HTML
+        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+            MathJax.typesetPromise().catch(function (err) {
+                console.log(err.message);
+            });
+        }
+    });
+</script>
+{{ end }}

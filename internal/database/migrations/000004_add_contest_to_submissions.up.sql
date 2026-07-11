@@ -1,0 +1,1 @@
+ALTER TABLE submissions ADD COLUMN contest_id BIGINT REFERENCES contests(id) ON DELETE SET NULL;

@@ -1,0 +1,48 @@
+{{ define "page" }}
+<div class="container">
+    <h2>Submission #{{ .Data.Submission.ID }}</h2>
+    <div class="card">
+        <p><strong>Status:</strong> {{ .Data.Submission.Status }}</p>
+        <p><strong>Verdict:</strong> {{ if .Data.Submission.Verdict }}{{ .Data.Submission.Verdict }}{{ else }}Pending{{ end }}</p>
+        <p><strong>Language:</strong> {{ .Data.Submission.Language }}</p>
+        <p><strong>Submitted At:</strong> {{ .Data.Submission.SubmittedAt.Time.Format "2006-01-02 15:04:05" }}</p>
+        {{ if .Data.Submission.CompileOutput }}
+        <h4>Compile Output:</h4>
+        <pre>{{ .Data.Submission.CompileOutput }}</pre>
+        {{ end }}
+    </div>
+
+    {{ if .Data.TestResults }}
+    <h3>Test Cases</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Test #</th>
+                <th>Verdict</th>
+                <th>Time (ms)</th>
+                <th>Memory (KB)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .Data.TestResults }}
+            <tr>
+                <td>{{ .TestIndex }}</td>
+                <td>{{ .Verdict }}</td>
+                <td>{{ .TimeMs }}</td>
+                <td>{{ .MemoryKb }}</td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+    {{ end }}
+
+    <h3>Source Code</h3>
+    <div class="card">
+        {{ if .Data.CanViewSource }}
+        <pre><code>{{ .Data.Submission.SourceCode }}</code></pre>
+        {{ else }}
+        <p>Bạn không có quyền xem mã nguồn của bài nộp này.</p>
+        {{ end }}
+    </div>
+</div>
+{{ end }}

@@ -1,0 +1,1 @@
+ALTER TABLE submissions ADD COLUMN score INT NOT NULL DEFAULT 0;

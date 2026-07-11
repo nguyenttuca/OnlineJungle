@@ -1,0 +1,464 @@
+package handlers
+
+import (
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/tuantu/oj-web/internal/database/sqlcdb"
+)
+
+// Admin Dashboard
+func (env *Env) AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_dashboard.html", nil)
+}
+
+// Problems
+func (env *Env) AdminCreateProblemGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_problem.html", nil)
+}
+
+func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	slug := r.FormValue("code")
+	title := r.FormValue("name")
+	statement := r.FormValue("description")
+
+	timeLimitSec, _ := strconv.ParseFloat(r.FormValue("time_limit"), 64)
+	timeLimit := int(timeLimitSec * 1000)
+	if timeLimit <= 0 {
+		timeLimit = 1000
+	}
+	memoryLimitKb, _ := strconv.Atoi(r.FormValue("memory_limit"))
+	memoryLimit := memoryLimitKb / 1024
+	if memoryLimit <= 0 {
+		memoryLimit = 256
+	}
+
+	if slug == "" || title == "" {
+		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Slug and Title are required"})
+		return
+	}
+
+	// Check if slug exists
+	_, err := env.Queries.GetProblemBySlug(r.Context(), slug)
+	if err == nil {
+		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Slug already exists"})
+		return
+	}
+
+	_, err = env.Queries.CreateProblem(r.Context(), sqlcdb.CreateProblemParams{
+		Slug:              slug,
+		Title:             title,
+		StatementMd:       statement,
+		TimeLimitMs:       int32(timeLimit),
+		MemoryLimitMb:     int32(memoryLimit),
+		CheckerType:       "diff",
+		Category:          "Uncategorized",
+		InputDesc:         "",
+		OutputDesc:        "",
+		ConstraintsDesc:   "",
+		Examples:          []byte("[]"),
+		CustomCheckerCode: "",
+	})
+	if err != nil {
+		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Failed to create problem: " + err.Error()})
+		return
+	}
+
+	http.Redirect(w, r, "/problems/"+slug, http.StatusSeeOther)
+}
+
+// Contests
+func (env *Env) AdminCreateContestGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_contest.html", nil)
+}
+
+func (env *Env) AdminCreateContestPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	title := r.FormValue("name")
+	startAtStr := r.FormValue("start_time")
+	endAtStr := r.FormValue("end_time")
+
+	if title == "" || startAtStr == "" || endAtStr == "" {
+		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "All fields are required"})
+		return
+	}
+
+	startAt, errStart := time.Parse("2006-01-02T15:04", startAtStr)
+	endAt, errEnd := time.Parse("2006-01-02T15:04", endAtStr)
+
+	if errStart != nil || errEnd != nil {
+		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "Invalid time format"})
+		return
+	}
+
+	if endAt.Before(startAt) {
+		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "End time must be after start time"})
+		return
+	}
+
+	_, err := env.Queries.CreateContest(r.Context(), sqlcdb.CreateContestParams{
+		Title:   title,
+		StartAt: pgtype.Timestamptz{Time: startAt, Valid: true},
+		EndAt:   pgtype.Timestamptz{Time: endAt, Valid: true},
+	})
+	if err != nil {
+		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "Failed to create contest: " + err.Error()})
+		return
+	}
+
+	http.Redirect(w, r, "/contests", http.StatusSeeOther)
+}
+
+// Blogs
+func (env *Env) AdminCreateBlogGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_blog.html", nil)
+}
+
+// Groups
+func (env *Env) AdminCreateGroupGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_group.html", nil)
+}
+
+// Announcements
+func (env *Env) AdminCreateAnnouncementGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_announcement.html", nil)
+}
+
+// Test cases
+func (env *Env) AdminCreateTestGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_create_test.html", nil)
+}
+
+func (env *Env) AdminCreateTestPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	problemIDStr := r.FormValue("problem_id")
+	problemID, err := strconv.ParseInt(problemIDStr, 10, 64)
+	if err != nil {
+		render(w, r, "admin_create_test.html", map[string]interface{}{"Error": "Invalid problem ID"})
+		return
+	}
+
+	input := r.FormValue("input")
+	expectedOutput := r.FormValue("expected_output")
+	isSample := r.FormValue("is_sample") == "on"
+
+	if input == "" || expectedOutput == "" {
+		render(w, r, "admin_create_test.html", map[string]interface{}{
+			"Error":     "Input and Expected Output are required",
+			"ProblemID": problemID,
+		})
+		return
+	}
+
+	// Determine the order_index
+	testCases, err := env.Queries.ListTestCasesByProblem(r.Context(), problemID)
+	var nextOrderIndex int32 = 1
+	if err == nil && len(testCases) > 0 {
+		nextOrderIndex = testCases[len(testCases)-1].OrderIndex + 1
+	}
+
+	_, err = env.Queries.CreateTestCase(r.Context(), sqlcdb.CreateTestCaseParams{
+		ProblemID:      problemID,
+		OrderIndex:     nextOrderIndex,
+		Input:          input,
+		ExpectedOutput: expectedOutput,
+		IsSample:       isSample,
+	})
+
+	if err != nil {
+		render(w, r, "admin_create_test.html", map[string]interface{}{
+			"Error":     "Failed to create test case: " + err.Error(),
+			"ProblemID": problemID,
+		})
+		return
+	}
+
+	// Show success message and keep the problem ID filled in for easy addition of multiple test cases
+	render(w, r, "admin_create_test.html", map[string]interface{}{
+		"Success":   "Test case #" + strconv.Itoa(int(nextOrderIndex)) + " created successfully!",
+		"ProblemID": problemID,
+	})
+}
+
+// Judge Nodes Management
+func (env *Env) AdminJudgesListHandler(w http.ResponseWriter, r *http.Request) {
+	nodes, err := env.Queries.ListJudgeNodes(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to load judge nodes", http.StatusInternalServerError)
+		return
+	}
+	render(w, r, "admin_judges.html", map[string]interface{}{
+		"Nodes": nodes,
+	})
+}
+
+func (env *Env) AdminJudgeCreateGetHandler(w http.ResponseWriter, r *http.Request) {
+	render(w, r, "admin_judge_form.html", nil)
+}
+
+func (env *Env) AdminJudgeCreatePostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	name := r.FormValue("name")
+	baseUrl := r.FormValue("base_url")
+	apiKey := r.FormValue("api_key")
+	isActive := r.FormValue("is_active") == "on"
+
+	if name == "" || baseUrl == "" {
+		render(w, r, "admin_judge_form.html", map[string]interface{}{
+			"Error": "Name and Base URL are required.",
+		})
+		return
+	}
+
+	_, err := env.Queries.CreateJudgeNode(r.Context(), sqlcdb.CreateJudgeNodeParams{
+		Name:            name,
+		BaseUrl:         baseUrl,
+		ApiKeyEncrypted: apiKey,
+		IsActive:        isActive,
+		MaxConcurrent:   3, // Default to 3
+	})
+	if err != nil {
+		render(w, r, "admin_judge_form.html", map[string]interface{}{
+			"Error": "Failed to create node: " + err.Error(),
+		})
+		return
+	}
+
+	http.Redirect(w, r, "/admin/judges", http.StatusSeeOther)
+}
+
+func (env *Env) AdminJudgeEditGetHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	node, err := env.Queries.GetJudgeNodeByID(r.Context(), id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	render(w, r, "admin_judge_form.html", map[string]interface{}{
+		"Node": node,
+	})
+}
+
+func (env *Env) AdminJudgeEditPostHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	r.ParseForm()
+	name := r.FormValue("name")
+	baseUrl := r.FormValue("base_url")
+	apiKey := r.FormValue("api_key")
+	isActive := r.FormValue("is_active") == "on"
+
+	node, _ := env.Queries.GetJudgeNodeByID(r.Context(), id)
+
+	if name == "" || baseUrl == "" {
+		render(w, r, "admin_judge_form.html", map[string]interface{}{
+			"Error": "Name and Base URL are required.",
+			"Node":  node,
+		})
+		return
+	}
+
+	err = env.Queries.UpdateJudgeNode(r.Context(), sqlcdb.UpdateJudgeNodeParams{
+		ID:              id,
+		Name:            name,
+		BaseUrl:         baseUrl,
+		ApiKeyEncrypted: apiKey,
+		IsActive:        isActive,
+		MaxConcurrent:   node.MaxConcurrent,
+	})
+	if err != nil {
+		node, _ := env.Queries.GetJudgeNodeByID(r.Context(), id)
+		render(w, r, "admin_judge_form.html", map[string]interface{}{
+			"Error": "Failed to update node: " + err.Error(),
+			"Node":  node,
+		})
+		return
+	}
+
+	http.Redirect(w, r, "/admin/judges", http.StatusSeeOther)
+}
+
+// Edit Problem
+func (env *Env) AdminEditProblemGetHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	problem, err := env.Queries.GetProblemBySlug(r.Context(), slug)
+	if err != nil {
+		http.Error(w, "Problem not found", http.StatusNotFound)
+		return
+	}
+
+	// Create a wrapper struct to pass converted values to the template
+	type ProblemView struct {
+		Problem       sqlcdb.Problem
+		TimeLimitSec  float64
+		MemoryLimitKb int32
+		Error         string
+	}
+
+	pv := ProblemView{
+		Problem:       problem,
+		TimeLimitSec:  float64(problem.TimeLimitMs) / 1000.0,
+		MemoryLimitKb: problem.MemoryLimitMb * 1024,
+	}
+
+	render(w, r, "admin_edit_problem.html", pv)
+}
+
+func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Request) {
+	oldSlug := chi.URLParam(r, "slug")
+	problem, err := env.Queries.GetProblemBySlug(r.Context(), oldSlug)
+	if err != nil {
+		http.Error(w, "Problem not found", http.StatusNotFound)
+		return
+	}
+
+	r.ParseForm()
+	slug := r.FormValue("code")
+	title := r.FormValue("name")
+	statement := r.FormValue("description")
+
+	timeLimitSec, _ := strconv.ParseFloat(r.FormValue("time_limit"), 64)
+	timeLimitMs := int32(timeLimitSec * 1000)
+	if timeLimitMs <= 0 {
+		timeLimitMs = 1000
+	}
+	memoryLimitKb, _ := strconv.Atoi(r.FormValue("memory_limit"))
+	memoryLimitMb := int32(memoryLimitKb / 1024)
+	if memoryLimitMb <= 0 {
+		memoryLimitMb = 256
+	}
+
+	if slug == "" || title == "" {
+		render(w, r, "admin_edit_problem.html", map[string]interface{}{
+			"Error":   "All fields are required",
+			"Problem": problem,
+		})
+		return
+	}
+
+	err = env.Queries.UpdateProblem(r.Context(), sqlcdb.UpdateProblemParams{
+		ID:                problem.ID,
+		Slug:              slug,
+		Title:             title,
+		Category:          problem.Category,
+		TimeLimitMs:       timeLimitMs,
+		MemoryLimitMb:     memoryLimitMb,
+		StatementMd:       statement,
+		InputDesc:         problem.InputDesc,
+		OutputDesc:        problem.OutputDesc,
+		ConstraintsDesc:   problem.ConstraintsDesc,
+		Examples:          problem.Examples,
+		CheckerType:       problem.CheckerType,
+		CustomCheckerCode: problem.CustomCheckerCode,
+	})
+
+	if err != nil {
+		render(w, r, "admin_edit_problem.html", map[string]interface{}{
+			"Error":   "Failed to update problem: " + err.Error(),
+			"Problem": problem,
+		})
+		return
+	}
+
+	http.Redirect(w, r, "/admin/problems/"+slug+"/edit", http.StatusSeeOther)
+}
+
+// Edit Test
+func (env *Env) AdminEditTestGetHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	problem, err := env.Queries.GetProblemBySlug(r.Context(), slug)
+	if err != nil {
+		http.Error(w, "Problem not found", http.StatusNotFound)
+		return
+	}
+
+	testCases, _ := env.Queries.ListTestCasesByProblem(r.Context(), problem.ID)
+
+	render(w, r, "admin_edit_test.html", map[string]interface{}{
+		"Problem":   problem,
+		"TestCases": testCases,
+	})
+}
+
+func (env *Env) AdminEditTestPostHandler(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	problem, err := env.Queries.GetProblemBySlug(r.Context(), slug)
+	if err != nil {
+		http.Error(w, "Problem not found", http.StatusNotFound)
+		return
+	}
+
+	// Max upload size 100MB
+	err = r.ParseMultipartForm(100 << 20)
+	if err != nil {
+		render(w, r, "admin_edit_test.html", map[string]interface{}{
+			"Problem": problem,
+			"Error":   "Failed to parse form: " + err.Error(),
+		})
+		return
+	}
+
+	file, header, err := r.FormFile("problem-data-zipfile")
+	if err != nil {
+		render(w, r, "admin_edit_test.html", map[string]interface{}{
+			"Problem": problem,
+			"Error":   "Please select a ZIP file to upload.",
+		})
+		return
+	}
+	defer file.Close()
+
+	successMsg, err := env.HandleZipUpload(r.Context(), file, header.Size, problem.ID)
+
+	// Reload testcases to show on page
+	testCases, _ := env.Queries.ListTestCasesByProblem(r.Context(), problem.ID)
+
+	if err != nil {
+		render(w, r, "admin_edit_test.html", map[string]interface{}{
+			"Problem":   problem,
+			"TestCases": testCases,
+			"Error":     err.Error(),
+		})
+		return
+	}
+
+	render(w, r, "admin_edit_test.html", map[string]interface{}{
+		"Problem":   problem,
+		"TestCases": testCases,
+		"Success":   successMsg,
+	})
+}
+
+func (env *Env) AdminJudgeDeletePostHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = env.Queries.DeleteJudgeNode(r.Context(), id)
+	if err != nil {
+		// Just redirect back to the list with an error query param or similar, but for simplicity we will just log and redirect.
+		http.Redirect(w, r, "/admin/judges?error=true", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/judges", http.StatusSeeOther)
+}

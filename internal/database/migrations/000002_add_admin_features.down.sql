@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS announcements;
+DROP TABLE IF EXISTS blogs;
+DROP TABLE IF EXISTS group_members;
+DROP TABLE IF EXISTS groups;
