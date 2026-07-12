@@ -7,6 +7,8 @@ package sqlcdb
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createProblem = `-- name: CreateProblem :one
@@ -245,6 +247,91 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 			&i.Tags,
 			&i.TestcaseVisibility,
 			&i.MirrorFrom,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchProblems = `-- name: SearchProblems :many
+SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from,
+  (
+    SELECT s.verdict
+    FROM submissions s
+    WHERE s.problem_id = p.id
+      AND s.user_id = $1
+    ORDER BY (CASE WHEN s.verdict = 'AC' THEN 1 ELSE 2 END), s.submitted_at DESC
+    LIMIT 1
+  ) AS user_status
+FROM problems p
+WHERE
+  ($2::text = '' OR p.title ILIKE '%' || $2 || '%' OR p.slug ILIKE '%' || $2 || '%' OR p.id::text = $2)
+  AND ($3::text = '' OR p.category = $3)
+ORDER BY p.category, p.title
+`
+
+type SearchProblemsParams struct {
+	UserID      *int64 `json:"user_id"`
+	SearchQuery string `json:"search_query"`
+	Category    string `json:"category"`
+}
+
+type SearchProblemsRow struct {
+	ID                 int64              `json:"id"`
+	Slug               string             `json:"slug"`
+	Title              string             `json:"title"`
+	Category           string             `json:"category"`
+	TimeLimitMs        int32              `json:"time_limit_ms"`
+	MemoryLimitMb      int32              `json:"memory_limit_mb"`
+	StatementMd        string             `json:"statement_md"`
+	InputDesc          string             `json:"input_desc"`
+	OutputDesc         string             `json:"output_desc"`
+	ConstraintsDesc    string             `json:"constraints_desc"`
+	Examples           []byte             `json:"examples"`
+	CheckerType        string             `json:"checker_type"`
+	CustomCheckerCode  string             `json:"custom_checker_code"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	EditorialContent   string             `json:"editorial_content"`
+	Tags               []byte             `json:"tags"`
+	TestcaseVisibility string             `json:"testcase_visibility"`
+	MirrorFrom         string             `json:"mirror_from"`
+	UserStatus         string             `json:"user_status"`
+}
+
+func (q *Queries) SearchProblems(ctx context.Context, arg SearchProblemsParams) ([]SearchProblemsRow, error) {
+	rows, err := q.db.Query(ctx, searchProblems, arg.UserID, arg.SearchQuery, arg.Category)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchProblemsRow{}
+	for rows.Next() {
+		var i SearchProblemsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Title,
+			&i.Category,
+			&i.TimeLimitMs,
+			&i.MemoryLimitMb,
+			&i.StatementMd,
+			&i.InputDesc,
+			&i.OutputDesc,
+			&i.ConstraintsDesc,
+			&i.Examples,
+			&i.CheckerType,
+			&i.CustomCheckerCode,
+			&i.CreatedAt,
+			&i.EditorialContent,
+			&i.Tags,
+			&i.TestcaseVisibility,
+			&i.MirrorFrom,
+			&i.UserStatus,
 		); err != nil {
 			return nil, err
 		}

@@ -9,18 +9,58 @@ import (
 
 func (env *Env) ProblemListHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	problems, err := env.Queries.ListProblems(ctx)
+	q := r.URL.Query().Get("q")
+	category := r.URL.Query().Get("category")
+	status := r.URL.Query().Get("status")
+
+	user := GetUserFromContext(ctx)
+	var userID *int64
+	if user != nil {
+		userID = &user.ID
+	}
+
+	rawProblems, err := env.Queries.SearchProblems(ctx, sqlcdb.SearchProblemsParams{
+		SearchQuery: q,
+		Category:    category,
+		UserID:      userID,
+	})
 	if err != nil {
-		log.Printf("Error listing problems: %v", err)
+		log.Printf("Error searching problems: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	user := GetUserFromContext(r.Context())
+	// In-memory filter by status
+	var filteredProblems []sqlcdb.SearchProblemsRow
+	for _, p := range rawProblems {
+		include := true
+		if status == "solved" {
+			if !p.UserStatus.Valid || p.UserStatus.String != "AC" {
+				include = false
+			}
+		} else if status == "attempted" {
+			if !p.UserStatus.Valid || p.UserStatus.String == "AC" {
+				include = false
+			}
+		} else if status == "unsolved" {
+			if p.UserStatus.Valid {
+				include = false
+			}
+		}
+		if include {
+			filteredProblems = append(filteredProblems, p)
+		}
+	}
+
+	categories, _ := env.Queries.GetProblemCategories(ctx)
 
 	render(w, r, "problems.html", map[string]interface{}{
-		"Problems": problems,
-		"User":     user,
+		"Problems":   filteredProblems,
+		"Categories": categories,
+		"Q":          q,
+		"Category":   category,
+		"Status":     status,
+		"User":       user,
 	})
 }
 

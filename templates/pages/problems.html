@@ -1,31 +1,80 @@
 {{ define "page" }}
 <div class="container">
-    <h2>Problem Set</h2>
-    <table class="table">
-        <thead>
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h2>Problem Set</h2>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="/problems" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="q" class="form-label">Search (ID, Name)</label>
+                    <input type="text" class="form-control" id="q" name="q" value="{{ .Data.Q }}" placeholder="e.g. 1001, A + B">
+                </div>
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">All Categories</option>
+                        {{ $currentCat := .Data.Category }}
+                        {{ range .Data.Categories }}
+                            <option value="{{ . }}" {{ if eq . $currentCat }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="all" {{ if eq .Data.Status "all" }}selected{{ end }}>All</option>
+                        <option value="solved" {{ if eq .Data.Status "solved" }}selected{{ end }}>Solved</option>
+                        <option value="attempted" {{ if eq .Data.Status "attempted" }}selected{{ end }}>Attempted</option>
+                        <option value="unsolved" {{ if eq .Data.Status "unsolved" }}selected{{ end }}>Unsolved</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-hover table-bordered shadow-sm bg-white">
+        <thead class="table-light">
             <tr>
-                <th>Status</th>
+                <th style="width: 15%">Status</th>
                 <th>Task</th>
-                <th>Category</th>
+                <th style="width: 25%">Category</th>
             </tr>
         </thead>
         <tbody>
             {{ range .Data.Problems }}
             <tr>
-                <td>-</td>
-                <td>
-                    <a href="/problems/{{ .Slug }}">{{ .Title }}</a>
+                <td class="align-middle fw-bold">
+                    {{ if .UserStatus.Valid }}
+                        {{ if eq .UserStatus.String "AC" }}
+                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> AC</span>
+                        {{ else }}
+                            <span class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Attempted</span>
+                        {{ end }}
+                    {{ else }}
+                        <span class="text-muted">-</span>
+                    {{ end }}
+                </td>
+                <td class="align-middle">
+                    <a href="/problems/{{ .Slug }}" class="text-decoration-none fw-bold">{{ .Title }}</a>
                     {{ if $.User }}
                         {{ if eq $.User.Role "admin" }}
-                            <a href="/admin/problems/{{ .Slug }}/edit" style="margin-left: 10px; font-size: 0.85em; color: #ff9800;">[Edit]</a>
+                            <a href="/admin/problems/{{ .Slug }}/edit" class="ms-2 badge bg-warning text-dark text-decoration-none">Edit</a>
                         {{ end }}
                     {{ end }}
                 </td>
-                <td>{{ .Category }}</td>
+                <td class="align-middle text-muted">{{ .Category }}</td>
             </tr>
             {{ else }}
             <tr>
-                <td colspan="3">No problems found.</td>
+                <td colspan="3" class="text-center py-4 text-muted">No problems found matching your criteria.</td>
             </tr>
             {{ end }}
         </tbody>

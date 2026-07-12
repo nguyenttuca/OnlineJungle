@@ -13,6 +13,22 @@ SELECT * FROM problems WHERE category = $1 ORDER BY title;
 -- name: GetProblemCategories :many
 SELECT DISTINCT category FROM problems ORDER BY category;
 
+-- name: SearchProblems :many
+SELECT p.*,
+  (
+    SELECT s.verdict
+    FROM submissions s
+    WHERE s.problem_id = p.id
+      AND s.user_id = sqlc.narg('user_id')
+    ORDER BY (CASE WHEN s.verdict = 'AC' THEN 1 ELSE 2 END), s.submitted_at DESC
+    LIMIT 1
+  ) AS user_status
+FROM problems p
+WHERE
+  (@search_query::text = '' OR p.title ILIKE '%' || @search_query || '%' OR p.slug ILIKE '%' || @search_query || '%' OR p.id::text = @search_query)
+  AND (@category::text = '' OR p.category = @category)
+ORDER BY p.category, p.title;
+
 -- name: CreateProblem :one
 INSERT INTO problems (slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, editorial_content, tags, testcase_visibility, mirror_from)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
