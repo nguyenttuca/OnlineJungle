@@ -17,7 +17,7 @@ func (env *Env) AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 // Problems
 func (env *Env) AdminCreateProblemGetHandler(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "admin_create_problem.html", nil)
+	render(w, r, "admin_create_problem_new.html", nil)
 }
 
 func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +62,10 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		ConstraintsDesc:   "",
 		Examples:          []byte("[]"),
 		CustomCheckerCode: "",
+		EditorialContent:  r.FormValue("editorial_content"),
+		Tags:              []byte(r.FormValue("tags")),
+		TestcaseVisibility: r.FormValue("testcase_visibility"),
+		MirrorFrom:        r.FormValue("mirror_from"),
 	})
 	if err != nil {
 		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Failed to create problem: " + err.Error()})
@@ -100,10 +104,16 @@ func (env *Env) AdminCreateContestPostHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	rankingType := r.FormValue("ranking_type")
+	if rankingType != "IOI" && rankingType != "ICPC" {
+		rankingType = "IOI" // default
+	}
+
 	_, err := env.Queries.CreateContest(r.Context(), sqlcdb.CreateContestParams{
-		Title:   title,
-		StartAt: pgtype.Timestamptz{Time: startAt, Valid: true},
-		EndAt:   pgtype.Timestamptz{Time: endAt, Valid: true},
+		Title:       title,
+		StartAt:     pgtype.Timestamptz{Time: startAt, Valid: true},
+		EndAt:       pgtype.Timestamptz{Time: endAt, Valid: true},
+		RankingType: rankingType,
 	})
 	if err != nil {
 		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "Failed to create contest: " + err.Error()})
@@ -366,6 +376,10 @@ func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Reque
 		Examples:          problem.Examples,
 		CheckerType:       problem.CheckerType,
 		CustomCheckerCode: problem.CustomCheckerCode,
+		EditorialContent:  r.FormValue("editorial_content"),
+		Tags:              []byte(r.FormValue("tags")),
+		TestcaseVisibility: r.FormValue("testcase_visibility"),
+		MirrorFrom:        r.FormValue("mirror_from"),
 	})
 
 	if err != nil {

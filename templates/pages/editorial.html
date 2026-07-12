@@ -1,0 +1,96 @@
+{{ define "page" }}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12 problem-statement">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/problems">Problems</a></li>
+                <li class="breadcrumb-item"><a href="/problems/{{ .Data.Problem.Slug }}">{{ .Data.Problem.Title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editorial</li>
+            </ol>
+        </nav>
+
+        <h2 style="margin-top: 0; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color);">Hướng dẫn giải: {{ .Data.Problem.Title }}</h2>
+
+        <div class="markdown-content mt-4" style="font-size: 1.05rem;" id="editorial-content">
+            {{ .Data.Problem.EditorialContent }}
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<!-- Marked.js for Markdown parsing -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- MathJax for LaTeX parsing -->
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+        }
+    };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const markdownElements = document.querySelectorAll('.markdown-content');
+        
+        // Pattern from texme.js to correctly tokenize MathJax blocks and protect them
+        const pattern = [
+            '\\\\begin{(.*?)}([\\s\\S]*?)\\\\end{\\1}', // \begin{..}..\end{..}
+            '\\\\\\[[\\s\\S]*?\\\\\\]', // \[..\]
+            '\\\\\\([\\s\\S]*?\\\\\\)', // \(..\)
+            '\\\\\\$', // \$ (literal dollar escaped)
+            '\\$\\$(?:[^\\\\]|\\\\.)*?\\$\\$', // $$..$$
+            '\\$(?:[^$\\\\]|\\\\.)+?\\$', // $..$
+        ].join('|');
+        const re = new RegExp(pattern, 'g');
+
+        markdownElements.forEach(el => {
+            let s = el.textContent.trim();
+            if (s) {
+                const mathBlocks = [];
+                let counter = 0;
+                let nextIndex = 0;
+                let result;
+                let processedText = "";
+                
+                while ((result = re.exec(s)) !== null) {
+                    if (result.index > nextIndex) {
+                        processedText += s.substring(nextIndex, result.index);
+                    }
+                    const match = result[0];
+                    const id = `::MASK_${counter++}::`;
+                    mathBlocks.push({ id, text: match });
+                    processedText += id;
+                    nextIndex = re.lastIndex;
+                }
+                
+                if (s.length > nextIndex) {
+                    processedText += s.substring(nextIndex);
+                }
+                
+                let html = marked.parse(processedText);
+                
+                mathBlocks.forEach(block => {
+                    html = html.replace(block.id, block.text);
+                });
+                
+                el.innerHTML = html;
+            }
+        });
+        
+        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+            MathJax.typesetPromise().catch(function (err) {
+                console.log(err.message);
+            });
+        }
+    });
+</script>
+{{ end }}

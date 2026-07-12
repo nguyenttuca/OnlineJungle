@@ -83,20 +83,24 @@ type JudgeNode struct {
 }
 
 type Problem struct {
-	ID                int64              `json:"id"`
-	Slug              string             `json:"slug"`
-	Title             string             `json:"title"`
-	Category          string             `json:"category"`
-	TimeLimitMs       int32              `json:"time_limit_ms"`
-	MemoryLimitMb     int32              `json:"memory_limit_mb"`
-	StatementMd       string             `json:"statement_md"`
-	InputDesc         string             `json:"input_desc"`
-	OutputDesc        string             `json:"output_desc"`
-	ConstraintsDesc   string             `json:"constraints_desc"`
-	Examples          []byte             `json:"examples"`
-	CheckerType       string             `json:"checker_type"`
-	CustomCheckerCode string             `json:"custom_checker_code"`
-	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	ID                 int64              `json:"id"`
+	Slug               string             `json:"slug"`
+	Title              string             `json:"title"`
+	Category           string             `json:"category"`
+	TimeLimitMs        int32              `json:"time_limit_ms"`
+	MemoryLimitMb      int32              `json:"memory_limit_mb"`
+	StatementMd        string             `json:"statement_md"`
+	InputDesc          string             `json:"input_desc"`
+	OutputDesc         string             `json:"output_desc"`
+	ConstraintsDesc    string             `json:"constraints_desc"`
+	Examples           []byte             `json:"examples"`
+	CheckerType        string             `json:"checker_type"`
+	CustomCheckerCode  string             `json:"custom_checker_code"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	EditorialContent   string             `json:"editorial_content"`
+	Tags               []byte             `json:"tags"`
+	TestcaseVisibility string             `json:"testcase_visibility"`
+	MirrorFrom         string             `json:"mirror_from"`
 }
 
 type Session struct {

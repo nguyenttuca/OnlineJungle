@@ -1,0 +1,3 @@
+ALTER TABLE problems ADD COLUMN tags JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE problems ADD COLUMN testcase_visibility VARCHAR(50) NOT NULL DEFAULT 'hidden';
+ALTER TABLE problems ADD COLUMN mirror_from VARCHAR(255) NOT NULL DEFAULT '';

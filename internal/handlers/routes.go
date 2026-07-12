@@ -17,6 +17,7 @@ func SetupRoutes(r chi.Router, env *Env) {
 		r.Get("/", env.HomeHandler)
 		r.Get("/problems", env.ProblemListHandler)
 		r.Get("/problems/{slug}", env.ProblemDetailHandler)
+		r.Get("/problems/{slug}/editorial", env.ProblemEditorialHandler)
 		r.Get("/problems/{slug}/submit", env.SubmitGetHandler)
 		r.With(SubmitLimiter.Middleware).Post("/problems/{slug}/submit", env.SubmitPostHandler)
 		r.Get("/contests", env.ContestsHandler)

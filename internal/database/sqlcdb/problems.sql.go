@@ -10,24 +10,28 @@ import (
 )
 
 const createProblem = `-- name: CreateProblem :one
-INSERT INTO problems (slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-RETURNING id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at
+INSERT INTO problems (slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, editorial_content, tags, testcase_visibility, mirror_from)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+RETURNING id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from
 `
 
 type CreateProblemParams struct {
-	Slug              string `json:"slug"`
-	Title             string `json:"title"`
-	Category          string `json:"category"`
-	TimeLimitMs       int32  `json:"time_limit_ms"`
-	MemoryLimitMb     int32  `json:"memory_limit_mb"`
-	StatementMd       string `json:"statement_md"`
-	InputDesc         string `json:"input_desc"`
-	OutputDesc        string `json:"output_desc"`
-	ConstraintsDesc   string `json:"constraints_desc"`
-	Examples          []byte `json:"examples"`
-	CheckerType       string `json:"checker_type"`
-	CustomCheckerCode string `json:"custom_checker_code"`
+	Slug               string `json:"slug"`
+	Title              string `json:"title"`
+	Category           string `json:"category"`
+	TimeLimitMs        int32  `json:"time_limit_ms"`
+	MemoryLimitMb      int32  `json:"memory_limit_mb"`
+	StatementMd        string `json:"statement_md"`
+	InputDesc          string `json:"input_desc"`
+	OutputDesc         string `json:"output_desc"`
+	ConstraintsDesc    string `json:"constraints_desc"`
+	Examples           []byte `json:"examples"`
+	CheckerType        string `json:"checker_type"`
+	CustomCheckerCode  string `json:"custom_checker_code"`
+	EditorialContent   string `json:"editorial_content"`
+	Tags               []byte `json:"tags"`
+	TestcaseVisibility string `json:"testcase_visibility"`
+	MirrorFrom         string `json:"mirror_from"`
 }
 
 func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (Problem, error) {
@@ -44,6 +48,10 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (P
 		arg.Examples,
 		arg.CheckerType,
 		arg.CustomCheckerCode,
+		arg.EditorialContent,
+		arg.Tags,
+		arg.TestcaseVisibility,
+		arg.MirrorFrom,
 	)
 	var i Problem
 	err := row.Scan(
@@ -61,6 +69,10 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (P
 		&i.CheckerType,
 		&i.CustomCheckerCode,
 		&i.CreatedAt,
+		&i.EditorialContent,
+		&i.Tags,
+		&i.TestcaseVisibility,
+		&i.MirrorFrom,
 	)
 	return i, err
 }
@@ -75,7 +87,7 @@ func (q *Queries) DeleteProblem(ctx context.Context, id int64) error {
 }
 
 const getProblemByID = `-- name: GetProblemByID :one
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at FROM problems WHERE id = $1
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE id = $1
 `
 
 func (q *Queries) GetProblemByID(ctx context.Context, id int64) (Problem, error) {
@@ -96,12 +108,16 @@ func (q *Queries) GetProblemByID(ctx context.Context, id int64) (Problem, error)
 		&i.CheckerType,
 		&i.CustomCheckerCode,
 		&i.CreatedAt,
+		&i.EditorialContent,
+		&i.Tags,
+		&i.TestcaseVisibility,
+		&i.MirrorFrom,
 	)
 	return i, err
 }
 
 const getProblemBySlug = `-- name: GetProblemBySlug :one
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at FROM problems WHERE slug = $1
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE slug = $1
 `
 
 func (q *Queries) GetProblemBySlug(ctx context.Context, slug string) (Problem, error) {
@@ -122,6 +138,10 @@ func (q *Queries) GetProblemBySlug(ctx context.Context, slug string) (Problem, e
 		&i.CheckerType,
 		&i.CustomCheckerCode,
 		&i.CreatedAt,
+		&i.EditorialContent,
+		&i.Tags,
+		&i.TestcaseVisibility,
+		&i.MirrorFrom,
 	)
 	return i, err
 }
@@ -151,7 +171,7 @@ func (q *Queries) GetProblemCategories(ctx context.Context) ([]string, error) {
 }
 
 const listProblems = `-- name: ListProblems :many
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at FROM problems ORDER BY category, title
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems ORDER BY category, title
 `
 
 func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
@@ -178,6 +198,10 @@ func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
 			&i.CheckerType,
 			&i.CustomCheckerCode,
 			&i.CreatedAt,
+			&i.EditorialContent,
+			&i.Tags,
+			&i.TestcaseVisibility,
+			&i.MirrorFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -190,7 +214,7 @@ func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
 }
 
 const listProblemsByCategory = `-- name: ListProblemsByCategory :many
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at FROM problems WHERE category = $1 ORDER BY title
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE category = $1 ORDER BY title
 `
 
 func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) ([]Problem, error) {
@@ -217,6 +241,10 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 			&i.CheckerType,
 			&i.CustomCheckerCode,
 			&i.CreatedAt,
+			&i.EditorialContent,
+			&i.Tags,
+			&i.TestcaseVisibility,
+			&i.MirrorFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -231,24 +259,29 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 const updateProblem = `-- name: UpdateProblem :exec
 UPDATE problems SET title = $2, slug = $3, category = $4, time_limit_ms = $5, memory_limit_mb = $6,
     statement_md = $7, input_desc = $8, output_desc = $9, constraints_desc = $10,
-    examples = $11, checker_type = $12, custom_checker_code = $13
+    examples = $11, checker_type = $12, custom_checker_code = $13, editorial_content = $14,
+    tags = $15, testcase_visibility = $16, mirror_from = $17
 WHERE id = $1
 `
 
 type UpdateProblemParams struct {
-	ID                int64  `json:"id"`
-	Title             string `json:"title"`
-	Slug              string `json:"slug"`
-	Category          string `json:"category"`
-	TimeLimitMs       int32  `json:"time_limit_ms"`
-	MemoryLimitMb     int32  `json:"memory_limit_mb"`
-	StatementMd       string `json:"statement_md"`
-	InputDesc         string `json:"input_desc"`
-	OutputDesc        string `json:"output_desc"`
-	ConstraintsDesc   string `json:"constraints_desc"`
-	Examples          []byte `json:"examples"`
-	CheckerType       string `json:"checker_type"`
-	CustomCheckerCode string `json:"custom_checker_code"`
+	ID                 int64  `json:"id"`
+	Title              string `json:"title"`
+	Slug               string `json:"slug"`
+	Category           string `json:"category"`
+	TimeLimitMs        int32  `json:"time_limit_ms"`
+	MemoryLimitMb      int32  `json:"memory_limit_mb"`
+	StatementMd        string `json:"statement_md"`
+	InputDesc          string `json:"input_desc"`
+	OutputDesc         string `json:"output_desc"`
+	ConstraintsDesc    string `json:"constraints_desc"`
+	Examples           []byte `json:"examples"`
+	CheckerType        string `json:"checker_type"`
+	CustomCheckerCode  string `json:"custom_checker_code"`
+	EditorialContent   string `json:"editorial_content"`
+	Tags               []byte `json:"tags"`
+	TestcaseVisibility string `json:"testcase_visibility"`
+	MirrorFrom         string `json:"mirror_from"`
 }
 
 func (q *Queries) UpdateProblem(ctx context.Context, arg UpdateProblemParams) error {
@@ -266,6 +299,10 @@ func (q *Queries) UpdateProblem(ctx context.Context, arg UpdateProblemParams) er
 		arg.Examples,
 		arg.CheckerType,
 		arg.CustomCheckerCode,
+		arg.EditorialContent,
+		arg.Tags,
+		arg.TestcaseVisibility,
+		arg.MirrorFrom,
 	)
 	return err
 }

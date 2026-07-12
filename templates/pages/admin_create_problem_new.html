@@ -1,0 +1,217 @@
+{{ define "page" }}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800">Tạo bài tập mới</h2>
+        <a href="/admin/problems" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    {{ if .Data.Error }}
+    <div class="alert alert-danger shadow-sm border-0 border-start border-danger border-4">
+        {{ .Data.Error }}
+    </div>
+    {{ end }}
+
+    <form action="/admin/problems/create" method="POST" id="createProblemForm">
+        {{ .CsrfToken }}
+        
+        <div class="row g-4 mb-5 pb-5">
+            <!-- Cột trái: Nội dung chính -->
+            <div class="col-lg-8">
+                <!-- Card 1: Thông tin cơ bản -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom-0">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Mã bài (Slug) <span class="text-danger">*</span></label>
+                                <input type="text" name="code" class="form-control font-monospace" required placeholder="vidu-bai-1" value="{{ .Data.Slug }}">
+                                <div class="form-text">URL thân thiện, không dấu, không khoảng trắng.</div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Tên bài tập <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" required placeholder="A+B Problem" value="{{ .Data.Title }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Danh mục (Category)</label>
+                                <input type="text" name="category" class="form-control" placeholder="Basic" value="{{ .Data.Category }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nguồn tham khảo (Mirror from)</label>
+                                <input type="text" name="mirror_from" class="form-control" placeholder="Codeforces, VNOI...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Đề bài & Hướng dẫn -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom-0">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-file-earmark-text me-2"></i>Nội dung Đề bài (Markdown)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Mô tả bài toán <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control font-monospace" rows="8" required placeholder="Sử dụng Markdown và LaTeX cho công thức toán học..."></textarea>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Định dạng Input</label>
+                                <textarea name="input_desc" class="form-control font-monospace" rows="4" placeholder="Dữ liệu đầu vào..."></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Định dạng Output</label>
+                                <textarea name="output_desc" class="form-control font-monospace" rows="4" placeholder="Kết quả đầu ra..."></textarea>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Giới hạn & Ràng buộc (Constraints)</label>
+                            <textarea name="constraints_desc" class="form-control font-monospace" rows="3" placeholder="$1 \le N \le 10^5$"></textarea>
+                        </div>
+                        <div>
+                            <label class="form-label fw-bold text-success"><i class="bi bi-journal-text me-1"></i>Hướng dẫn giải (Editorial)</label>
+                            <textarea name="editorial_content" class="form-control font-monospace border-success" rows="5" placeholder="Nội dung hướng dẫn giải, thuật toán đề xuất... (Markdown)"></textarea>
+                            <div class="form-text">Để trống nếu không muốn hiển thị nút "Xem hướng dẫn giải".</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Cấu hình hệ thống -->
+            <div class="col-lg-4">
+                <!-- Card 3: Cấu hình chấm -->
+                <div class="card shadow-sm border-0 mb-4 bg-light">
+                    <div class="card-header bg-light py-3 border-bottom-0">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-cpu me-2"></i>Giới hạn & Chấm điểm</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Thời gian (Seconds) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.1" name="time_limit" class="form-control" required value="1.0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Bộ nhớ (MB) <span class="text-danger">*</span></label>
+                            <input type="number" name="memory_limit" class="form-control" required value="256">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Hiển thị Testcase</label>
+                            <select name="testcase_visibility" class="form-select">
+                                <option value="hidden">Ẩn toàn bộ</option>
+                                <option value="sample">Chỉ hiện Sample</option>
+                                <option value="all">Hiện tất cả (khi làm xong)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Phân loại / Dạng đề -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom-0">
+                        <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-tags me-2"></i>Dạng đề (Tags)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="text" id="tagInput" class="form-control" placeholder="Nhấn Enter để thêm tag...">
+                            <div id="tagContainer" class="mt-2 d-flex flex-wrap gap-1"></div>
+                            <input type="hidden" name="tags" id="tagsHiddenField" value="">
+                        </div>
+                        <div class="form-text">Ví dụ: quy hoạch động, đồ thị, tham lam...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Action Bar -->
+        <div class="position-fixed bottom-0 start-0 w-100 bg-white border-top shadow-lg p-3 z-3" style="margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)) !important; transition: all 0.3s;">
+            <div class="container-fluid d-flex justify-content-end align-items-center">
+                <button type="button" class="btn btn-light me-3" onclick="window.location.href='/admin/problems'">Hủy</button>
+                <button type="submit" class="btn btn-primary px-5 fw-bold"><i class="bi bi-check2-circle me-2"></i>Tạo Bài Tập</button>
+            </div>
+        </div>
+    </form>
+</div>
+{{ end }}
+
+{{ define "scripts" }}
+<style>
+    /* Styling for tag badges */
+    .tag-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e9ecef;
+        color: #495057;
+        padding: 0.35em 0.65em;
+        border-radius: 50rem;
+        font-size: 0.85em;
+        font-weight: 500;
+    }
+    .tag-badge .remove-tag {
+        margin-left: 6px;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    .tag-badge .remove-tag:hover {
+        color: #dc3545;
+    }
+    
+    /* Responsive adjustment for sticky bar */
+    @media (max-width: 767.98px) {
+        .position-fixed.bottom-0 {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // JS Logic for Tag Input
+    const tagInput = document.getElementById('tagInput');
+    const tagContainer = document.getElementById('tagContainer');
+    const tagsHiddenField = document.getElementById('tagsHiddenField');
+    let tags = [];
+
+    function updateTags() {
+        tagContainer.innerHTML = '';
+        tags.forEach((tag, index) => {
+            const badge = document.createElement('span');
+            badge.className = 'tag-badge border border-secondary border-opacity-25 shadow-sm';
+            badge.innerHTML = `${tag} <i class="bi bi-x-circle-fill remove-tag" data-index="${index}"></i>`;
+            tagContainer.appendChild(badge);
+        });
+        tagsHiddenField.value = JSON.stringify(tags);
+    }
+
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const val = this.value.trim();
+            if (val && !tags.includes(val)) {
+                tags.push(val);
+                updateTags();
+            }
+            this.value = '';
+        }
+    });
+
+    tagContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-tag')) {
+            const index = e.target.getAttribute('data-index');
+            tags.splice(index, 1);
+            updateTags();
+        }
+    });
+    
+    // Prevent form submit on enter from input fields (unless it's a textarea)
+    document.getElementById('createProblemForm').addEventListener('keydown', function(e) {
+        if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{{ end }}
