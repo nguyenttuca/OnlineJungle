@@ -38,14 +38,14 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	if slug == "" || title == "" {
-		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Slug and Title are required"})
+		render(w, r, "admin_create_problem_new.html", map[string]string{"Error": "Slug and Title are required"})
 		return
 	}
 
 	// Check if slug exists
 	_, err := env.Queries.GetProblemBySlug(r.Context(), slug)
 	if err == nil {
-		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Slug already exists"})
+		render(w, r, "admin_create_problem_new.html", map[string]string{"Error": "Slug already exists"})
 		return
 	}
 
@@ -68,7 +68,7 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		MirrorFrom:        r.FormValue("mirror_from"),
 	})
 	if err != nil {
-		render(w, r, "admin_create_problem.html", map[string]string{"Error": "Failed to create problem: " + err.Error()})
+		render(w, r, "admin_create_problem_new.html", map[string]string{"Error": "Failed to create problem: " + err.Error()})
 		return
 	}
 

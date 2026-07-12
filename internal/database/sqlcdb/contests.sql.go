@@ -164,17 +164,23 @@ func (q *Queries) CalculateContestStandingsIOI(ctx context.Context, contestID in
 }
 
 const createContest = `-- name: CreateContest :one
-INSERT INTO contests (title, start_at, end_at) VALUES ($1, $2, $3) RETURNING id, title, start_at, end_at, created_at, ranking_type
+INSERT INTO contests (title, start_at, end_at, ranking_type) VALUES ($1, $2, $3, $4) RETURNING id, title, start_at, end_at, created_at, ranking_type
 `
 
 type CreateContestParams struct {
-	Title   string             `json:"title"`
-	StartAt pgtype.Timestamptz `json:"start_at"`
-	EndAt   pgtype.Timestamptz `json:"end_at"`
+	Title       string             `json:"title"`
+	StartAt     pgtype.Timestamptz `json:"start_at"`
+	EndAt       pgtype.Timestamptz `json:"end_at"`
+	RankingType string             `json:"ranking_type"`
 }
 
 func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (Contest, error) {
-	row := q.db.QueryRow(ctx, createContest, arg.Title, arg.StartAt, arg.EndAt)
+	row := q.db.QueryRow(ctx, createContest,
+		arg.Title,
+		arg.StartAt,
+		arg.EndAt,
+		arg.RankingType,
+	)
 	var i Contest
 	err := row.Scan(
 		&i.ID,
@@ -206,7 +212,7 @@ func (q *Queries) GetContestByID(ctx context.Context, id int64) (Contest, error)
 }
 
 const getContestProblem = `-- name: GetContestProblem :one
-SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at
+SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from
 FROM problems p
 JOIN contest_problems cp ON cp.problem_id = p.id
 WHERE cp.contest_id = $1 AND p.slug = $2
@@ -235,31 +241,39 @@ func (q *Queries) GetContestProblem(ctx context.Context, arg GetContestProblemPa
 		&i.CheckerType,
 		&i.CustomCheckerCode,
 		&i.CreatedAt,
+		&i.EditorialContent,
+		&i.Tags,
+		&i.TestcaseVisibility,
+		&i.MirrorFrom,
 	)
 	return i, err
 }
 
 const listContestProblems = `-- name: ListContestProblems :many
-SELECT cp.label, cp.points, p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at FROM contest_problems cp JOIN problems p ON p.id = cp.problem_id WHERE cp.contest_id = $1 ORDER BY cp.label
+SELECT cp.label, cp.points, p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from FROM contest_problems cp JOIN problems p ON p.id = cp.problem_id WHERE cp.contest_id = $1 ORDER BY cp.label
 `
 
 type ListContestProblemsRow struct {
-	Label             string             `json:"label"`
-	Points            int32              `json:"points"`
-	ID                int64              `json:"id"`
-	Slug              string             `json:"slug"`
-	Title             string             `json:"title"`
-	Category          string             `json:"category"`
-	TimeLimitMs       int32              `json:"time_limit_ms"`
-	MemoryLimitMb     int32              `json:"memory_limit_mb"`
-	StatementMd       string             `json:"statement_md"`
-	InputDesc         string             `json:"input_desc"`
-	OutputDesc        string             `json:"output_desc"`
-	ConstraintsDesc   string             `json:"constraints_desc"`
-	Examples          []byte             `json:"examples"`
-	CheckerType       string             `json:"checker_type"`
-	CustomCheckerCode string             `json:"custom_checker_code"`
-	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	Label              string             `json:"label"`
+	Points             int32              `json:"points"`
+	ID                 int64              `json:"id"`
+	Slug               string             `json:"slug"`
+	Title              string             `json:"title"`
+	Category           string             `json:"category"`
+	TimeLimitMs        int32              `json:"time_limit_ms"`
+	MemoryLimitMb      int32              `json:"memory_limit_mb"`
+	StatementMd        string             `json:"statement_md"`
+	InputDesc          string             `json:"input_desc"`
+	OutputDesc         string             `json:"output_desc"`
+	ConstraintsDesc    string             `json:"constraints_desc"`
+	Examples           []byte             `json:"examples"`
+	CheckerType        string             `json:"checker_type"`
+	CustomCheckerCode  string             `json:"custom_checker_code"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	EditorialContent   string             `json:"editorial_content"`
+	Tags               []byte             `json:"tags"`
+	TestcaseVisibility string             `json:"testcase_visibility"`
+	MirrorFrom         string             `json:"mirror_from"`
 }
 
 func (q *Queries) ListContestProblems(ctx context.Context, contestID int64) ([]ListContestProblemsRow, error) {
@@ -288,6 +302,10 @@ func (q *Queries) ListContestProblems(ctx context.Context, contestID int64) ([]L
 			&i.CheckerType,
 			&i.CustomCheckerCode,
 			&i.CreatedAt,
+			&i.EditorialContent,
+			&i.Tags,
+			&i.TestcaseVisibility,
+			&i.MirrorFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -345,14 +363,15 @@ func (q *Queries) RemoveContestProblem(ctx context.Context, arg RemoveContestPro
 }
 
 const updateContest = `-- name: UpdateContest :exec
-UPDATE contests SET title = $2, start_at = $3, end_at = $4 WHERE id = $1
+UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5 WHERE id = $1
 `
 
 type UpdateContestParams struct {
-	ID      int64              `json:"id"`
-	Title   string             `json:"title"`
-	StartAt pgtype.Timestamptz `json:"start_at"`
-	EndAt   pgtype.Timestamptz `json:"end_at"`
+	ID          int64              `json:"id"`
+	Title       string             `json:"title"`
+	StartAt     pgtype.Timestamptz `json:"start_at"`
+	EndAt       pgtype.Timestamptz `json:"end_at"`
+	RankingType string             `json:"ranking_type"`
 }
 
 func (q *Queries) UpdateContest(ctx context.Context, arg UpdateContestParams) error {
@@ -361,6 +380,7 @@ func (q *Queries) UpdateContest(ctx context.Context, arg UpdateContestParams) er
 		arg.Title,
 		arg.StartAt,
 		arg.EndAt,
+		arg.RankingType,
 	)
 	return err
 }

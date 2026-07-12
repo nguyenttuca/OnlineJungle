@@ -67,11 +67,16 @@ func (env *Env) AdminCreateUserPostHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	role := r.FormValue("role")
+	if role != "user" && role != "admin" {
+		role = "user"
+	}
+
 	_, err = env.Queries.CreateUser(r.Context(), sqlcdb.CreateUserParams{
 		Username:     username,
 		PasswordHash: string(hashedPassword),
 		DisplayName:  displayName,
-		Role:         "user",
+		Role:         role,
 	})
 
 	if err != nil {

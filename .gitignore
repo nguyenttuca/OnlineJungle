@@ -24,3 +24,4 @@ go.work.sum
 # Custom binaries
 top_oj_server
 oj-web
+server.log

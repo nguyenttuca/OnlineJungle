@@ -5,7 +5,7 @@ SELECT * FROM contests WHERE id = $1;
 SELECT * FROM contests ORDER BY start_at DESC;
 
 -- name: CreateContest :one
-INSERT INTO contests (title, start_at, end_at) VALUES ($1, $2, $3) RETURNING *;
+INSERT INTO contests (title, start_at, end_at, ranking_type) VALUES ($1, $2, $3, $4) RETURNING *;
 
 -- name: AddContestProblem :exec
 INSERT INTO contest_problems (contest_id, problem_id, label, points) VALUES ($1, $2, $3, $4);
@@ -17,7 +17,7 @@ SELECT cp.label, cp.points, p.* FROM contest_problems cp JOIN problems p ON p.id
 DELETE FROM contest_problems WHERE contest_id = $1 AND problem_id = $2;
 
 -- name: UpdateContest :exec
-UPDATE contests SET title = $2, start_at = $3, end_at = $4 WHERE id = $1;
+UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5 WHERE id = $1;
 
 -- name: GetContestProblem :one
 SELECT p.*
