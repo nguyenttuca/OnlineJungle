@@ -9,6 +9,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <form method="POST" action="{{ if .Data.Blog }}/admin/blogs/{{ .Data.Blog.ID }}/edit{{ else }}/admin/blogs/new{{ end }}">
+                    <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
                     <div class="mb-3">
                         <label for="title" class="form-label">Title</label>
                         <input type="text" class="form-control" id="title" name="title" value="{{ if .Data.Blog }}{{ .Data.Blog.Title }}{{ end }}" required>

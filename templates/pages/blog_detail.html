@@ -12,10 +12,19 @@
         <div class="card shadow-sm mt-3">
             <div class="card-body p-5">
                 <h1 class="card-title fw-bold mb-3">{{ .Data.Blog.Title }}</h1>
-                <h6 class="card-subtitle mb-4 text-muted">
-                    <i class="fas fa-user-edit me-1"></i> {{ .Data.Blog.AuthorUsername }} 
-                    <span class="mx-2">|</span> 
-                    <i class="far fa-calendar-alt me-1"></i> {{ .Data.Blog.CreatedAt.Format "Jan 02, 2006 at 15:04" }}
+                <h6 class="card-subtitle mb-4 text-muted d-flex align-items-center">
+                    <div>
+                        <i class="fas fa-user-edit me-1"></i> {{ .Data.Blog.AuthorUsername }} 
+                        <span class="mx-2">|</span> 
+                        <i class="far fa-calendar-alt me-1"></i> {{ .Data.Blog.CreatedAt.Time.Format "Jan 02, 2006 at 15:04" }}
+                    </div>
+                    {{ if and .User (eq .User.Role "admin") }}
+                    <div class="ms-auto">
+                        <a href="/admin/blogs/{{ .Data.Blog.ID }}/edit" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </div>
+                    {{ end }}
                 </h6>
                 <hr class="mb-4">
                 <div class="markdown-body">

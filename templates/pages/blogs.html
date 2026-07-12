@@ -9,7 +9,7 @@
         <a href="/blogs/{{ .Slug }}" class="list-group-item list-group-item-action flex-column align-items-start">
             <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">{{ .Title }}</h5>
-                <small class="text-muted">{{ .CreatedAt.Format "Jan 02, 2006" }}</small>
+                <small class="text-muted">{{ .CreatedAt.Time.Format "Jan 02, 2006" }}</small>
             </div>
             <p class="mb-1 text-muted small">By {{ .AuthorUsername }}</p>
         </a>
