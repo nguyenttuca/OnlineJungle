@@ -52,8 +52,8 @@
             {{ range .Data.Problems }}
             <tr>
                 <td class="align-middle fw-bold">
-                    {{ if .UserStatus.Valid }}
-                        {{ if eq .UserStatus.String "AC" }}
+                    {{ if ne .UserStatus "" }}
+                        {{ if eq .UserStatus "AC" }}
                             <span class="text-success"><i class="bi bi-check-circle-fill"></i> AC</span>
                         {{ else }}
                             <span class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Attempted</span>

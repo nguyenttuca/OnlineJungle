@@ -15,14 +15,14 @@ SELECT DISTINCT category FROM problems ORDER BY category;
 
 -- name: SearchProblems :many
 SELECT p.*,
-  (
+  COALESCE((
     SELECT s.verdict
     FROM submissions s
     WHERE s.problem_id = p.id
       AND s.user_id = sqlc.narg('user_id')
     ORDER BY (CASE WHEN s.verdict = 'AC' THEN 1 ELSE 2 END), s.submitted_at DESC
     LIMIT 1
-  ) AS user_status
+  ), '') AS user_status
 FROM problems p
 WHERE
   (@search_query::text = '' OR p.title ILIKE '%' || @search_query || '%' OR p.slug ILIKE '%' || @search_query || '%' OR p.id::text = @search_query)

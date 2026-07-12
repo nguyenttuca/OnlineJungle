@@ -260,14 +260,14 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 
 const searchProblems = `-- name: SearchProblems :many
 SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from,
-  (
+  COALESCE((
     SELECT s.verdict
     FROM submissions s
     WHERE s.problem_id = p.id
       AND s.user_id = $1
     ORDER BY (CASE WHEN s.verdict = 'AC' THEN 1 ELSE 2 END), s.submitted_at DESC
     LIMIT 1
-  ) AS user_status
+  ), '') AS user_status
 FROM problems p
 WHERE
   ($2::text = '' OR p.title ILIKE '%' || $2 || '%' OR p.slug ILIKE '%' || $2 || '%' OR p.id::text = $2)
@@ -300,7 +300,7 @@ type SearchProblemsRow struct {
 	Tags               []byte             `json:"tags"`
 	TestcaseVisibility string             `json:"testcase_visibility"`
 	MirrorFrom         string             `json:"mirror_from"`
-	UserStatus         string             `json:"user_status"`
+	UserStatus         interface{}        `json:"user_status"`
 }
 
 func (q *Queries) SearchProblems(ctx context.Context, arg SearchProblemsParams) ([]SearchProblemsRow, error) {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/tuantu/oj-web/internal/database/sqlcdb"
 )
 
 func (env *Env) ProblemListHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,16 +35,17 @@ func (env *Env) ProblemListHandler(w http.ResponseWriter, r *http.Request) {
 	var filteredProblems []sqlcdb.SearchProblemsRow
 	for _, p := range rawProblems {
 		include := true
+		// p.UserStatus will be "" if no submission was found, because we used COALESCE in SQL
 		if status == "solved" {
-			if !p.UserStatus.Valid || p.UserStatus.String != "AC" {
+			if p.UserStatus != "AC" {
 				include = false
 			}
 		} else if status == "attempted" {
-			if !p.UserStatus.Valid || p.UserStatus.String == "AC" {
+			if p.UserStatus == "AC" || p.UserStatus == "" {
 				include = false
 			}
 		} else if status == "unsolved" {
-			if p.UserStatus.Valid {
+			if p.UserStatus != "" {
 				include = false
 			}
 		}
