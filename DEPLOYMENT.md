@@ -59,7 +59,7 @@ Hệ thống được thiết kế theo mô hình Client-Server kết hợp Work
 ### Bước 2: Clone source code và cấu hình
 1. Lấy mã nguồn:
    ```bash
-   git clone <link-repo-github>
+   git clone https://github.com/nguyenttuca/OnlineJungle
    cd oj-web
    ```
 2. Cài đặt các gói phụ thuộc (Dependencies):
