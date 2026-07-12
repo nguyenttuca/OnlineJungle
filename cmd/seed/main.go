@@ -26,12 +26,11 @@ func main() {
 	log.Println("Starting database seed...")
 
 	// 1. Create Admin User
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("toplearn@admin"), bcrypt.DefaultCost)
 	admin, err := queries.CreateUser(ctx, sqlcdb.CreateUserParams{
-		Username:     "admin",
+		Username:     "toplearn",
 		PasswordHash: string(hashedPassword),
-		DisplayName:  "Administrator",
-		Country:      "VN",
+		DisplayName:  "TopLearn",
 		Role:         "admin",
 	})
 	if err != nil {
