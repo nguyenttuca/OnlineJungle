@@ -10,7 +10,7 @@ VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: UpdateTestCase :exec
-UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5 WHERE id = $1;
+UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5, order_index = $6 WHERE id = $1;
 
 -- name: DeleteTestCase :exec
 DELETE FROM test_cases WHERE id = $1;

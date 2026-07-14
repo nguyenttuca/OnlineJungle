@@ -14,7 +14,7 @@
     {{ end }}
 
     <form action="/admin/problems/create" method="POST" id="createProblemForm">
-        {{ .CsrfToken }}
+        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
         
         <div class="row g-4 mb-5 pb-5">
             <!-- Cột trái: Nội dung chính -->

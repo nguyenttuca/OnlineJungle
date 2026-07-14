@@ -1,8 +1,8 @@
 {{ define "page" }}
 <div class="container pb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Sửa dữ liệu (Test Cases) - {{ .Data.Problem.Title}}</h2>
-        <a href="/admin/problems/{{ .Data.Problem.Slug}}/edit" class="btn btn-outline-secondary">Trở về</a>
+        <h2>Sửa dữ liệu (Test Cases) - {{ .Data.Problem.Title }}</h2>
+        <a href="/admin/problems/{{ .Data.Problem.Slug }}/edit" class="btn btn-outline-secondary">Trở về</a>
     </div>
 
     {{ if .Data.Error }}
@@ -12,79 +12,415 @@
     <div class="alert alert-success">{{ .Data.Success }}</div>
     {{ end }}
 
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Import Test Cases (ZIP)</h5>
-        </div>
-        <div class="card-body">
-            <form action="/admin/problems/{{ .Data.Problem.Slug}}/tests" enctype="multipart/form-data" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
-                <div class="mb-3">
-                    <label for="problem-data-zipfile" class="form-label">Tập tin dữ liệu nén dạng ZIP:</label>
-                    <input class="form-control" type="file" id="problem-data-zipfile" name="problem-data-zipfile" accept=".zip" required>
-                    <div class="form-text">
+    <form action="/admin/problems/{{ .Data.Problem.Slug }}/tests" enctype="multipart/form-data" method="POST" id="testCasesForm">
+        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+        
+        <!-- General Configuration Panel -->
+        <div class="dmoj-panel mb-4 shadow-sm">
+            <div class="dmoj-row">
+                <div class="dmoj-label">Tập tin dữ liệu nén dạng zip:</div>
+                <div class="dmoj-content">
+                    <div class="mb-2">
+                        Hiện nay: <code>data.zip</code> <label class="ms-2"><input type="checkbox" name="reset_zip" value="1"> Đặt lại</label>
+                    </div>
+                    <div class="mb-2">
+                        Thay đổi: <input type="file" name="problem-data-zipfile" id="problem-data-zipfile" accept=".zip" class="form-control form-control-sm d-inline-block w-auto">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-dmoj-action mt-2" id="btn-import">Nhấn nút này nếu bạn mới thay đổi file test</button>
+                    <div class="form-text mt-2" style="font-size: 0.85rem;">
                         Hỗ trợ Input: .in, .inp, .input | Output: .out, .ans, .answer.<br>
-                        Tự động ghép cặp theo tên file (VD: 1.in & 1.out).<br>
-                        Tự động nhận diện Sample Test (thêm chữ "sample" vào tên file).<br>
-                        File ZIP giới hạn ≤ 100MB. Kích thước file uncompressed ≤ 20MB/file.
+                        Tự động ghép cặp theo tên file (VD: 1.in & 1.out). Tự động nhận diện Sample Test (thêm chữ "sample" vào tên file).
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary" id="btn-import">Import ZIP</button>
-            </form>
-        </div>
-    </div>
+            </div>
+            
+            <div class="dmoj-row">
+                <div class="dmoj-label">Grader:</div>
+                <div class="dmoj-content">
+                    <select name="grader" class="form-select form-select-sm w-auto">
+                        <option value="default" selected>Mặc định</option>
+                        <option value="custom">Tùy chỉnh</option>
+                    </select>
+                </div>
+            </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Danh sách Test Cases hiện tại ({{ if .Data.TestCases }}{{ len .Data.TestCases }}{{ else }}0{{ end }})</h5>
-            {{ if .Data.Success }}
-            <span class="badge bg-success">Imported Successfully</span>
-            {{ end }}
+            <div class="dmoj-row">
+                <div class="dmoj-label">IO Method:</div>
+                <div class="dmoj-content d-flex align-items-center gap-2">
+                    <select name="io_method" class="form-select form-select-sm w-auto">
+                        <option value="standard">Standard IO</option>
+                        <option value="file" selected>Sử dụng file</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Tập tin đầu vào:</div>
+                <div class="dmoj-content">
+                    <input type="text" name="file_input_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.INP">
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Tập tin đầu ra:</div>
+                <div class="dmoj-content">
+                    <input type="text" name="file_output_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.OUT">
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Trình chấm:</div>
+                <div class="dmoj-content d-flex align-items-center gap-3">
+                    <select name="checker" class="form-select form-select-sm w-auto">
+                        <option value="default" selected>Mặc định</option>
+                        <option value="custom">Tùy chỉnh</option>
+                    </select>
+                    <a href="#" class="text-decoration-none" style="font-size: 0.9rem;">Hướng dẫn</a>
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Hạn chế chiều dài đầu ra:</div>
+                <div class="dmoj-content">
+                    <input type="number" name="output_limit" class="form-control form-control-sm w-25 mb-1">
+                    <span class="form-text" style="font-size: 0.85rem;">Có thể bỏ trống. Chỉ thay đổi nếu độ dài của output quá dài (hơn 20Mb).</span>
+                </div>
+            </div>
         </div>
-        <div class="card-body p-0">
-            {{ if .Data.TestCases }}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Trạng thái</th>
-                            <th>Input (Bytes)</th>
-                            <th>Output (Bytes)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+
+        <!-- Test Cases Data Table -->
+        <div class="dmoj-table-container shadow-sm">
+            <table class="table table-bordered mb-0 dmoj-table" id="testcasesTable">
+                <thead>
+                    <tr>
+                        <th width="40" class="text-center">
+                            <button type="button" class="btn btn-sm btn-add-row" id="btnAddRow" title="Thêm Test Case">+</button>
+                        </th>
+                        <th width="50" class="text-center">STT</th>
+                        <th width="150">Kiểu</th>
+                        <th>Tập tin đầu vào</th>
+                        <th>Tập tin đầu ra</th>
+                        <th width="80" class="text-center">Điểm</th>
+                        <th width="80" class="text-center">Pretest?</th>
+                        <th width="60" class="text-center">Xoá?</th>
+                    </tr>
+                </thead>
+                <tbody id="testcasesBody">
+                    {{ if .Data.TestCases }}
                         {{ range $idx, $tc := .Data.TestCases }}
-                        <tr>
-                            <td><strong>#{{ add $idx 1 }}</strong></td>
-                            <td>
-                                {{ if $tc.IsSample }}
-                                <span class="badge bg-info text-dark">Sample</span>
-                                {{ else }}
-                                <span class="badge bg-secondary">Hidden</span>
-                                {{ end }}
+                        <tr class="test-row">
+                            <td class="text-center align-middle">
+                                <span class="drag-handle"><i class="bi bi-three-dots-vertical"></i><i class="bi bi-three-dots-vertical" style="margin-left:-8px"></i></span>
                             </td>
-                            <td>{{ len $tc.Input }} bytes</td>
-                            <td>{{ len $tc.ExpectedOutput }} bytes</td>
+                            <td class="text-center align-middle font-weight-bold row-index">{{ add $idx 1 }}</td>
+                            <td class="align-middle">
+                                <input type="hidden" name="test_ids[]" value="{{ $tc.ID }}">
+                                <select name="test_types[]" class="form-select form-select-sm">
+                                    <option value="single" selected>Test đơn</option>
+                                    <option value="batch">Test chùm</option>
+                                </select>
+                            </td>
+                            <td class="align-middle position-relative">
+                                <textarea name="test_inputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;">{{ $tc.Input }}</textarea>
+                            </td>
+                            <td class="align-middle position-relative">
+                                <textarea name="test_outputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;">{{ $tc.ExpectedOutput }}</textarea>
+                            </td>
+                            <td class="align-middle">
+                                <input type="number" step="0.1" name="test_points[]" class="form-control form-control-sm text-center" value="1">
+                            </td>
+                            <td class="text-center align-middle">
+                                <input type="hidden" name="test_pretests[]" value="{{ if $tc.IsSample }}1{{ else }}0{{ end }}">
+                                <input type="checkbox" class="cb-pretest" {{ if $tc.IsSample }}checked{{ end }}>
+                            </td>
+                            <td class="text-center align-middle">
+                                <input type="hidden" name="test_deletes[]" value="0">
+                                <input type="checkbox" class="cb-delete">
+                            </td>
                         </tr>
                         {{ end }}
-                    </tbody>
-                </table>
-            </div>
-            {{ else }}
-            <div class="p-4 text-center">
-                <p class="text-muted mb-0">Chưa có dữ liệu. Vui lòng tải lên file ZIP.</p>
-            </div>
-            {{ end }}
+                    {{ else }}
+                        <!-- Template row for empty state -->
+                        <tr class="test-row">
+                            <td class="text-center align-middle">
+                                <span class="drag-handle"><i class="bi bi-three-dots-vertical"></i><i class="bi bi-three-dots-vertical" style="margin-left:-8px"></i></span>
+                            </td>
+                            <td class="text-center align-middle font-weight-bold row-index">1</td>
+                            <td class="align-middle">
+                                <input type="hidden" name="test_ids[]" value="0">
+                                <select name="test_types[]" class="form-select form-select-sm">
+                                    <option value="single" selected>Test đơn</option>
+                                    <option value="batch">Test chùm</option>
+                                </select>
+                            </td>
+                            <td class="align-middle position-relative">
+                                <textarea name="test_inputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;"></textarea>
+                            </td>
+                            <td class="align-middle position-relative">
+                                <textarea name="test_outputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;"></textarea>
+                            </td>
+                            <td class="align-middle">
+                                <input type="number" step="0.1" name="test_points[]" class="form-control form-control-sm text-center" value="1">
+                            </td>
+                            <td class="text-center align-middle">
+                                <input type="hidden" name="test_pretests[]" value="0">
+                                <input type="checkbox" class="cb-pretest">
+                            </td>
+                            <td class="text-center align-middle">
+                                <input type="hidden" name="test_deletes[]" value="0">
+                                <input type="checkbox" class="cb-delete">
+                            </td>
+                        </tr>
+                    {{ end }}
+                </tbody>
+            </table>
         </div>
-    </div>
+
+        <div class="mt-4 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="bi bi-save me-2"></i>Lưu cấu hình & Test Cases</button>
+        </div>
+    </form>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+<!-- SortableJS cho tính năng Drag & Drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<style>
+    /* DMOJ Color Scheme & Layout */
+    :root {
+        --dmoj-dark-blue: #1d3649;
+        --dmoj-light-blue: #23435c;
+        --dmoj-border: #ddd;
+    }
+
+    .dmoj-panel {
+        border: 1px solid var(--dmoj-border);
+        border-radius: 4px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .dmoj-row {
+        display: flex;
+        border-bottom: 1px solid var(--dmoj-border);
+    }
+
+    .dmoj-row:last-child {
+        border-bottom: none;
+    }
+
+    .dmoj-label {
+        background-color: var(--dmoj-dark-blue);
+        color: white;
+        font-weight: 600;
+        padding: 12px 15px;
+        width: 250px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        text-align: right;
+    }
+
+    .dmoj-content {
+        padding: 12px 15px;
+        flex-grow: 1;
+        background-color: #fff;
+    }
+
+    .btn-dmoj-action {
+        background-color: #2b708b;
+        color: white;
+        border: none;
+    }
+    .btn-dmoj-action:hover {
+        background-color: #235d74;
+        color: white;
+    }
+
+    .dmoj-table-container {
+        overflow-x: auto;
+        border: 1px solid var(--dmoj-border);
+        border-radius: 4px;
+    }
+
+    .dmoj-table thead th {
+        background-color: var(--dmoj-dark-blue);
+        color: white;
+        font-weight: 600;
+        vertical-align: middle;
+        border-bottom: none;
+        border-color: var(--dmoj-light-blue);
+    }
+
+    .dmoj-table tbody tr {
+        background-color: #fff;
+        transition: background-color 0.2s;
+    }
+    
+    .dmoj-table tbody tr:nth-of-type(even) {
+        background-color: #f8f9fa;
+    }
+
+    .dmoj-table tbody tr:hover {
+        background-color: #f1f4f6;
+    }
+
+    .btn-add-row {
+        background-color: #38678c;
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 3px;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        line-height: 1;
+    }
+    .btn-add-row:hover {
+        background-color: #4a82af;
+        color: white;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: #888;
+        font-size: 1.2rem;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    /* Xóa input - dấu X */
+    .clear-input {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #999;
+        font-weight: bold;
+        display: none;
+    }
+    input:not(:placeholder-shown) + .clear-input {
+        display: block;
+    }
+    .clear-input:hover {
+        color: #dc3545;
+    }
+
+    /* Trạng thái bị xóa (strike-through) */
+    .row-deleted td {
+        text-decoration: line-through;
+        color: #aaa;
+        background-color: #fde8e8 !important;
+    }
+    .row-deleted input, .row-deleted select {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+    .row-deleted .cb-delete {
+        pointer-events: auto;
+        opacity: 1;
+    }
+</style>
 
 <script>
-    document.querySelector("form").addEventListener("submit", function() {
-        var btn = document.getElementById("btn-import");
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
-        btn.disabled = true;
+document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.getElementById('testcasesBody');
+    const btnAddRow = document.getElementById('btnAddRow');
+    const zipInput = document.getElementById('problem-data-zipfile');
+    const btnImport = document.getElementById('btn-import');
+
+    // 1. Highlight nút cập nhật test khi chọn file zip mới
+    zipInput.addEventListener('change', function() {
+        if(this.files && this.files.length > 0) {
+            btnImport.classList.remove('btn-dmoj-action');
+            btnImport.classList.add('btn-warning');
+            btnImport.classList.add('fw-bold');
+            btnImport.innerText = 'Đã chọn file! Nhấn để Upload';
+        } else {
+            btnImport.classList.add('btn-dmoj-action');
+            btnImport.classList.remove('btn-warning');
+            btnImport.classList.remove('fw-bold');
+            btnImport.innerText = 'Nhấn nút này nếu bạn mới thay đổi file test';
+        }
     });
+
+    // 2. Logic cập nhật lại Index (STT) cho bảng
+    function updateIndices() {
+        const rows = tbody.querySelectorAll('tr.test-row');
+        rows.forEach((row, index) => {
+            const sttCell = row.querySelector('.row-index');
+            if (sttCell) {
+                sttCell.innerText = index + 1;
+            }
+            // Do chúng ta dùng name array thuần (test_inputs[]) nên DOM order sẽ định đoạt thứ tự gửi lên Backend.
+            // Không cần đổi attribute name ở đây.
+        });
+    }
+
+    // 3. Khởi tạo SortableJS
+    Sortable.create(tbody, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'bg-light',
+        onEnd: function() {
+            // Khi kéo thả xong, cập nhật lại STT
+            updateIndices();
+        }
+    });
+
+    // 4. Thêm dòng mới (Clone dòng cuối)
+    btnAddRow.addEventListener('click', function() {
+        const rows = tbody.querySelectorAll('tr.test-row');
+        if (rows.length === 0) return; // Fallback nếu bảng rỗng
+        
+        const lastRow = rows[rows.length - 1];
+        const newRow = lastRow.cloneNode(true);
+        
+        // Reset các giá trị input trong dòng mới
+        newRow.querySelectorAll('input[type="text"], textarea').forEach(input => input.value = '');
+        newRow.querySelectorAll('input[type="number"]').forEach(input => input.value = '1');
+        
+        // Reset checkboxes và hidden inputs
+        newRow.querySelectorAll('.cb-pretest, .cb-delete').forEach(cb => cb.checked = false);
+        newRow.querySelectorAll('input[type="hidden"]').forEach(hi => hi.value = '0');
+        
+        // Bỏ class xóa nếu dòng cuối đang bị xóa
+        newRow.classList.remove('row-deleted');
+        
+        tbody.appendChild(newRow);
+        updateIndices();
+    });
+
+    // 5. Event Delegation cho checkbox
+    tbody.addEventListener('change', function(e) {
+        const target = e.target;
+        const row = target.closest('tr.test-row');
+        
+        // Xử lý Checkbox Pretest
+        if (target.classList.contains('cb-pretest')) {
+            const hiddenInput = target.previousElementSibling;
+            hiddenInput.value = target.checked ? '1' : '0';
+        }
+        
+        // Xử lý Checkbox Delete
+        if (target.classList.contains('cb-delete')) {
+            const hiddenInput = target.previousElementSibling;
+            hiddenInput.value = target.checked ? '1' : '0';
+            
+            if (target.checked) {
+                row.classList.add('row-deleted');
+            } else {
+                row.classList.remove('row-deleted');
+            }
+        }
+    });
+
+    // Cập nhật UI lúc mới load có thể thêm ở đây nếu cần
+});
 </script>
 {{ end }}

@@ -52,6 +52,10 @@ func main() {
 		ConstraintsDesc: "-10^9 <= A, B <= 10^9",
 		Examples:        []byte(`[{"input":"1 2","output":"3"}]`),
 		CheckerType:     "diff",
+		Tags:               []byte("[]"),
+		TestcaseVisibility: "all",
+		MirrorFrom:         "",
+		EditorialContent:   "",
 	})
 	if err != nil {
 		log.Printf("Skip creating problem: %v", err)

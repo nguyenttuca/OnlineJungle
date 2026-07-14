@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -78,7 +79,8 @@ func (c *Client) SubmitJudge(ctx context.Context, req JudgeRequest) (*JudgeRespo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("judge returned non-200 status: %d", resp.StatusCode)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("judge returned non-200 status: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var judgeResp JudgeResponse

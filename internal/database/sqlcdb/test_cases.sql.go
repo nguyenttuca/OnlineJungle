@@ -129,7 +129,7 @@ func (q *Queries) ListTestCasesByProblem(ctx context.Context, problemID int64) (
 }
 
 const updateTestCase = `-- name: UpdateTestCase :exec
-UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5 WHERE id = $1
+UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5, order_index = $6 WHERE id = $1
 `
 
 type UpdateTestCaseParams struct {
@@ -138,6 +138,7 @@ type UpdateTestCaseParams struct {
 	ExpectedOutput string `json:"expected_output"`
 	IsSample       bool   `json:"is_sample"`
 	SubtaskID      *int64 `json:"subtask_id"`
+	OrderIndex     int32  `json:"order_index"`
 }
 
 func (q *Queries) UpdateTestCase(ctx context.Context, arg UpdateTestCaseParams) error {
@@ -147,6 +148,7 @@ func (q *Queries) UpdateTestCase(ctx context.Context, arg UpdateTestCaseParams) 
 		arg.ExpectedOutput,
 		arg.IsSample,
 		arg.SubtaskID,
+		arg.OrderIndex,
 	)
 	return err
 }

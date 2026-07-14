@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/tuantu/oj-web/internal/database/sqlcdb"
 )
@@ -49,6 +53,11 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	tags := r.FormValue("tags")
+	if tags == "" {
+		tags = "[]"
+	}
+
 	_, err = env.Queries.CreateProblem(r.Context(), sqlcdb.CreateProblemParams{
 		Slug:              slug,
 		Title:             title,
@@ -63,7 +72,7 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		Examples:          []byte("[]"),
 		CustomCheckerCode: "",
 		EditorialContent:  r.FormValue("editorial_content"),
-		Tags:              []byte(r.FormValue("tags")),
+		Tags:              []byte(tags),
 		TestcaseVisibility: r.FormValue("testcase_visibility"),
 		MirrorFrom:        r.FormValue("mirror_from"),
 	})
@@ -362,6 +371,11 @@ func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	tags := r.FormValue("tags")
+	if tags == "" {
+		tags = "[]"
+	}
+
 	err = env.Queries.UpdateProblem(r.Context(), sqlcdb.UpdateProblemParams{
 		ID:                problem.ID,
 		Slug:              slug,
@@ -377,7 +391,7 @@ func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Reque
 		CheckerType:       problem.CheckerType,
 		CustomCheckerCode: problem.CustomCheckerCode,
 		EditorialContent:  r.FormValue("editorial_content"),
-		Tags:              []byte(r.FormValue("tags")),
+		Tags:              []byte(tags),
 		TestcaseVisibility: r.FormValue("testcase_visibility"),
 		MirrorFrom:        r.FormValue("mirror_from"),
 	})
@@ -428,17 +442,15 @@ func (env *Env) AdminEditTestPostHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	var successMsg string
 	file, header, err := r.FormFile("problem-data-zipfile")
 	if err != nil {
-		render(w, r, "admin_edit_test.html", map[string]interface{}{
-			"Problem": problem,
-			"Error":   "Please select a ZIP file to upload.",
-		})
-		return
+		// No ZIP file, handle manual test case saving
+		successMsg, err = env.HandleManualTestSave(r.Context(), r, problem.ID)
+	} else {
+		defer file.Close()
+		successMsg, err = env.HandleZipUpload(r.Context(), file, header.Size, problem.ID)
 	}
-	defer file.Close()
-
-	successMsg, err := env.HandleZipUpload(r.Context(), file, header.Size, problem.ID)
 
 	// Reload testcases to show on page
 	testCases, _ := env.Queries.ListTestCasesByProblem(r.Context(), problem.ID)
@@ -475,4 +487,87 @@ func (env *Env) AdminJudgeDeletePostHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	http.Redirect(w, r, "/admin/judges", http.StatusSeeOther)
+}
+
+func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, problemID int64) (string, error) {
+	testIDs := r.PostForm["test_ids[]"]
+	inputs := r.PostForm["test_inputs[]"]
+	outputs := r.PostForm["test_outputs[]"]
+	pretests := r.PostForm["test_pretests[]"]
+	deletes := r.PostForm["test_deletes[]"]
+	
+	tx, err := env.Pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback(ctx)
+	qtx := env.Queries.WithTx(tx)
+
+	validIds := make(map[int64]bool)
+
+	for i := 0; i < len(testIDs); i++ {
+		// skip if index out of bounds
+		if i >= len(inputs) || i >= len(outputs) {
+			continue
+		}
+
+		// check if deleted
+		if i < len(deletes) && deletes[i] == "1" {
+			id, _ := strconv.ParseInt(testIDs[i], 10, 64)
+			if id > 0 {
+				qtx.DeleteTestCase(ctx, id)
+			}
+			continue
+		}
+
+		id, _ := strconv.ParseInt(testIDs[i], 10, 64)
+		isSample := false
+		if i < len(pretests) && pretests[i] == "1" {
+			isSample = true
+		}
+
+		cleanInput := strings.ReplaceAll(inputs[i], "\r\n", "\n")
+		cleanOutput := strings.ReplaceAll(outputs[i], "\r\n", "\n")
+
+		if id > 0 {
+			err = qtx.UpdateTestCase(ctx, sqlcdb.UpdateTestCaseParams{
+				ID:             id,
+				Input:          cleanInput,
+				ExpectedOutput: cleanOutput,
+				IsSample:       isSample,
+				OrderIndex:     int32(i + 1),
+			})
+			if err != nil {
+				return "", fmt.Errorf("failed to update test case %d: %v", id, err)
+			}
+			validIds[id] = true
+		} else {
+			// create new
+			tc, err := qtx.CreateTestCase(ctx, sqlcdb.CreateTestCaseParams{
+				ProblemID:      problemID,
+				OrderIndex:     int32(i + 1),
+				Input:          cleanInput,
+				ExpectedOutput: cleanOutput,
+				IsSample:       isSample,
+			})
+			if err != nil {
+				return "", fmt.Errorf("failed to create test case: %v", err)
+			}
+			validIds[tc.ID] = true
+		}
+	}
+
+	// Delete cases not in validIds
+	oldCases, _ := qtx.ListTestCasesByProblem(ctx, problemID)
+	for _, oc := range oldCases {
+		if !validIds[oc.ID] {
+			qtx.DeleteTestCase(ctx, oc.ID)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return "", err
+	}
+
+	return "Lưu cấu hình Test Cases thành công!", nil
 }

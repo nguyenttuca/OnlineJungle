@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/tuantu/oj-web/internal/database/sqlcdb"
+	"github.com/tuantu/oj-web/internal/dispatcher"
 )
 
 func (env *Env) ContestSubmitPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +71,11 @@ func (env *Env) ContestSubmitPostHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		http.Error(w, "Failed to submit", http.StatusInternalServerError)
 		return
+	}
+
+	select {
+	case dispatcher.WakeupDispatcher <- struct{}{}:
+	default:
 	}
 
 	// Submission được tạo với status "queued". Dispatcher

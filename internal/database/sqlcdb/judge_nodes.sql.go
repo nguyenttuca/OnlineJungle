@@ -14,7 +14,7 @@ import (
 const createJudgeNode = `-- name: CreateJudgeNode :one
 INSERT INTO judge_nodes (name, base_url, api_key_encrypted, is_active, max_concurrent)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at
+RETURNING id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local
 `
 
 type CreateJudgeNodeParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) CreateJudgeNode(ctx context.Context, arg CreateJudgeNodeParams
 		&i.LastHealthCheckAt,
 		&i.ConsecutiveFailures,
 		&i.CreatedAt,
+		&i.IsLocal,
 	)
 	return i, err
 }
@@ -70,7 +71,7 @@ func (q *Queries) DeleteJudgeNode(ctx context.Context, id int64) error {
 }
 
 const getJudgeNodeByID = `-- name: GetJudgeNodeByID :one
-SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at FROM judge_nodes WHERE id = $1
+SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local FROM judge_nodes WHERE id = $1
 `
 
 func (q *Queries) GetJudgeNodeByID(ctx context.Context, id int64) (JudgeNode, error) {
@@ -89,6 +90,7 @@ func (q *Queries) GetJudgeNodeByID(ctx context.Context, id int64) (JudgeNode, er
 		&i.LastHealthCheckAt,
 		&i.ConsecutiveFailures,
 		&i.CreatedAt,
+		&i.IsLocal,
 	)
 	return i, err
 }
@@ -103,7 +105,7 @@ func (q *Queries) IncrementNodeActiveJobs(ctx context.Context, id int64) error {
 }
 
 const listActiveHealthyNodes = `-- name: ListActiveHealthyNodes :many
-SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at FROM judge_nodes WHERE is_active = true AND is_healthy = true ORDER BY id
+SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local FROM judge_nodes WHERE is_active = true AND is_healthy = true AND active_jobs < max_concurrent ORDER BY is_local ASC, active_jobs ASC, id ASC
 `
 
 func (q *Queries) ListActiveHealthyNodes(ctx context.Context) ([]JudgeNode, error) {
@@ -128,6 +130,7 @@ func (q *Queries) ListActiveHealthyNodes(ctx context.Context) ([]JudgeNode, erro
 			&i.LastHealthCheckAt,
 			&i.ConsecutiveFailures,
 			&i.CreatedAt,
+			&i.IsLocal,
 		); err != nil {
 			return nil, err
 		}
@@ -140,7 +143,7 @@ func (q *Queries) ListActiveHealthyNodes(ctx context.Context) ([]JudgeNode, erro
 }
 
 const listHealthyNodesForLanguage = `-- name: ListHealthyNodesForLanguage :many
-SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at FROM judge_nodes WHERE is_active = true AND is_healthy = true AND supported_languages->>$1 = 'true'
+SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local FROM judge_nodes WHERE is_active = true AND is_healthy = true AND supported_languages->>$1 = 'true'
 `
 
 func (q *Queries) ListHealthyNodesForLanguage(ctx context.Context, language []byte) ([]JudgeNode, error) {
@@ -165,6 +168,7 @@ func (q *Queries) ListHealthyNodesForLanguage(ctx context.Context, language []by
 			&i.LastHealthCheckAt,
 			&i.ConsecutiveFailures,
 			&i.CreatedAt,
+			&i.IsLocal,
 		); err != nil {
 			return nil, err
 		}
@@ -177,7 +181,7 @@ func (q *Queries) ListHealthyNodesForLanguage(ctx context.Context, language []by
 }
 
 const listJudgeNodes = `-- name: ListJudgeNodes :many
-SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at FROM judge_nodes ORDER BY id
+SELECT id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local FROM judge_nodes ORDER BY id
 `
 
 func (q *Queries) ListJudgeNodes(ctx context.Context) ([]JudgeNode, error) {
@@ -202,6 +206,7 @@ func (q *Queries) ListJudgeNodes(ctx context.Context) ([]JudgeNode, error) {
 			&i.LastHealthCheckAt,
 			&i.ConsecutiveFailures,
 			&i.CreatedAt,
+			&i.IsLocal,
 		); err != nil {
 			return nil, err
 		}

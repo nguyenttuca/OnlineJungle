@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/tuantu/oj-web/internal/database/sqlcdb"
+	"github.com/tuantu/oj-web/internal/dispatcher"
 )
 
 func (env *Env) SubmitGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +63,11 @@ func (env *Env) SubmitPostHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to create submission: %v", err)
 		http.Error(w, "Failed to submit", http.StatusInternalServerError)
 		return
+	}
+
+	select {
+	case dispatcher.WakeupDispatcher <- struct{}{}:
+	default:
 	}
 
 	// Redirect to submission detail page (or back to problem with success message)

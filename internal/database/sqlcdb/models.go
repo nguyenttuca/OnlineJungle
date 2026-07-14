@@ -80,6 +80,7 @@ type JudgeNode struct {
 	LastHealthCheckAt   pgtype.Timestamptz `json:"last_health_check_at"`
 	ConsecutiveFailures int32              `json:"consecutive_failures"`
 	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	IsLocal             bool               `json:"is_local"`
 }
 
 type Problem struct {

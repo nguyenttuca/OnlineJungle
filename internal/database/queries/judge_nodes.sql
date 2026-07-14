@@ -5,7 +5,7 @@ SELECT * FROM judge_nodes WHERE id = $1;
 SELECT * FROM judge_nodes ORDER BY id;
 
 -- name: ListActiveHealthyNodes :many
-SELECT * FROM judge_nodes WHERE is_active = true AND is_healthy = true ORDER BY id;
+SELECT * FROM judge_nodes WHERE is_active = true AND is_healthy = true AND active_jobs < max_concurrent ORDER BY is_local ASC, active_jobs ASC, id ASC;
 
 -- name: ListHealthyNodesForLanguage :many
 SELECT * FROM judge_nodes WHERE is_active = true AND is_healthy = true AND supported_languages->>sqlc.arg(language) = 'true';

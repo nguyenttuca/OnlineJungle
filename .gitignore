@@ -25,3 +25,15 @@ go.work.sum
 top_oj_server
 oj-web
 server.log
+
+# Temp files
+server_bin
+server_out.log
+big_input.txt
+big_payload.json
+patch_client.sh
+top_oj_server_linux
+upload.tar.gz
+test_multipart.go
+judge_patch/
+

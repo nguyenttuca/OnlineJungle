@@ -56,7 +56,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(handlers.SecureHeaders)
-	r.Use(handlers.RequestSizeLimit(10 << 20)) // 10MB default body limit
+	r.Use(handlers.RequestSizeLimit(100 << 20)) // 100MB default body limit for testcase zips
 	r.Use(func(next http.Handler) http.Handler {
 		csrfHandler := nosurf.New(next)
 		csrfHandler.SetBaseCookie(http.Cookie{

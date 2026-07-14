@@ -10,6 +10,8 @@ import (
 	"github.com/tuantu/oj-web/internal/judgepool"
 )
 
+var WakeupDispatcher = make(chan struct{}, 1)
+
 type Dispatcher struct {
 	Queries    *sqlcdb.Queries
 	Ctx        context.Context
@@ -53,16 +55,13 @@ func (d *Dispatcher) producer() {
 	// Khi context cancelled, close channel jobs
 	defer close(d.jobs)
 
-	for {
-		select {
-		case <-d.Ctx.Done():
-			log.Println("Dispatcher stopped, waiting for workers to finish...")
-			d.wg.Wait()
-			return
-		case <-ticker.C:
+	// Hàm hỗ trợ rút tất cả submission đang rảnh ra
+	processJobs := func() {
+		for {
 			sub, err := d.Queries.DequeueSubmission(d.Ctx)
 			if err != nil {
-				continue
+				// Hết bài nộp hoặc lỗi
+				break
 			}
 			log.Printf("Dequeued submission #%d, dispatching...", sub.ID)
 			select {
@@ -72,6 +71,19 @@ func (d *Dispatcher) producer() {
 				d.Queries.RequeueSubmission(context.Background(), sub.ID)
 				return
 			}
+		}
+	}
+
+	for {
+		select {
+		case <-d.Ctx.Done():
+			log.Println("Dispatcher stopped, waiting for workers to finish...")
+			d.wg.Wait()
+			return
+		case <-ticker.C:
+			processJobs()
+		case <-WakeupDispatcher:
+			processJobs()
 		}
 	}
 }

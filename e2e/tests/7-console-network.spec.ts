@@ -4,6 +4,10 @@ test.describe('Console & Network Errors', () => {
   const urlsToTest = [
     '/',
     '/problems',
+    '/problems?status=solved',
+    '/problems?status=unsolved',
+    '/problems?status=attempted',
+    '/problems?q=a',
     '/contests',
     '/blogs',
     '/login'
