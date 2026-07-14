@@ -30,6 +30,30 @@
                     </div>
                 </div>
             </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">IO Method:</div>
+                <div class="dmoj-content d-flex align-items-center gap-2">
+                    <select name="io_method" class="form-select form-select-sm w-auto">
+                        <option value="standard">Standard IO</option>
+                        <option value="file" selected>Sử dụng file</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Tập tin đầu vào:</div>
+                <div class="dmoj-content">
+                    <input type="text" name="file_input_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.INP">
+                </div>
+            </div>
+
+            <div class="dmoj-row">
+                <div class="dmoj-label">Tập tin đầu ra:</div>
+                <div class="dmoj-content">
+                    <input type="text" name="file_output_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.OUT">
+                </div>
+            </div>
         </div>
 
         <!-- Test Cases Data Table -->
@@ -67,7 +91,7 @@
                                 <textarea name="test_outputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;">{{ $tc.ExpectedOutput }}</textarea>
                             </td>
                             <td class="align-middle position-relative">
-                                <textarea name="test_descriptions[]" class="form-control form-control-sm" rows="2" style="resize: vertical; min-height: 40px;">{{ if $tc.Description.Valid }}{{ $tc.Description.String }}{{ end }}</textarea>
+                                <textarea name="test_descriptions[]" class="form-control form-control-sm" rows="2" style="resize: vertical; min-height: 40px;">{{ if $tc.Description }}{{ $tc.Description }}{{ end }}</textarea>
                             </td>
                             <td class="text-center align-middle">
                                 <input type="hidden" name="test_pretests[]" value="{{ if $tc.IsSample }}1{{ else }}0{{ end }}">
