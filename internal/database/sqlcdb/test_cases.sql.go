@@ -100,6 +100,26 @@ func (q *Queries) GetSampleTestCases(ctx context.Context, problemID int64) ([]Te
 	return items, nil
 }
 
+const getTestCase = `-- name: GetTestCase :one
+SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id, description FROM test_cases WHERE id = $1
+`
+
+func (q *Queries) GetTestCase(ctx context.Context, id int64) (TestCase, error) {
+	row := q.db.QueryRow(ctx, getTestCase, id)
+	var i TestCase
+	err := row.Scan(
+		&i.ID,
+		&i.ProblemID,
+		&i.OrderIndex,
+		&i.Input,
+		&i.ExpectedOutput,
+		&i.IsSample,
+		&i.SubtaskID,
+		&i.Description,
+	)
+	return i, err
+}
+
 const listTestCasesByProblem = `-- name: ListTestCasesByProblem :many
 SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id, description FROM test_cases WHERE problem_id = $1 ORDER BY order_index
 `

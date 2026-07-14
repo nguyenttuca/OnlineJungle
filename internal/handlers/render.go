@@ -23,6 +23,12 @@ func InitTemplates(templatesDir string) error {
 
 	funcMap := template.FuncMap{
 		"add": func(a, b int) int { return a + b },
+		"truncatePreview": func(s string) string {
+			if len(s) > 300 {
+				return s[:300] + "\n... [Data too large, editing disabled]"
+			}
+			return s
+		},
 	}
 
 	for _, pageFile := range pageFiles {

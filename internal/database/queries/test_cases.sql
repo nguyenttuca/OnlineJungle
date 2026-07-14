@@ -20,3 +20,6 @@ DELETE FROM test_cases WHERE problem_id = $1;
 
 -- name: ReorderTestCase :exec
 UPDATE test_cases SET order_index = $2 WHERE id = $1;
+
+-- name: GetTestCase :one
+SELECT * FROM test_cases WHERE id = $1;

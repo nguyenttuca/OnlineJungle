@@ -550,12 +550,23 @@ func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, probl
 		}
 
 		if id > 0 {
+			// Update existing
+			existingTC, err := env.Queries.GetTestCase(ctx, id)
+			if err == nil {
+				if strings.HasSuffix(cleanInput, "... [Data too large, editing disabled]") {
+					cleanInput = existingTC.Input
+				}
+				if strings.HasSuffix(cleanOutput, "... [Data too large, editing disabled]") {
+					cleanOutput = existingTC.ExpectedOutput
+				}
+			}
+
 			err = qtx.UpdateTestCase(ctx, sqlcdb.UpdateTestCaseParams{
 				ID:             id,
+				OrderIndex:     int32(orderIdx),
 				Input:          cleanInput,
 				ExpectedOutput: cleanOutput,
 				IsSample:       isSample,
-				OrderIndex:     int32(orderIdx),
 				Description:    dbDesc,
 			})
 			if err != nil {
