@@ -10,18 +10,19 @@ import (
 )
 
 const createTestCase = `-- name: CreateTestCase :one
-INSERT INTO test_cases (problem_id, order_index, input, expected_output, is_sample, subtask_id)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, problem_id, order_index, input, expected_output, is_sample, subtask_id
+INSERT INTO test_cases (problem_id, order_index, input, expected_output, is_sample, subtask_id, description)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, problem_id, order_index, input, expected_output, is_sample, subtask_id, description
 `
 
 type CreateTestCaseParams struct {
-	ProblemID      int64  `json:"problem_id"`
-	OrderIndex     int32  `json:"order_index"`
-	Input          string `json:"input"`
-	ExpectedOutput string `json:"expected_output"`
-	IsSample       bool   `json:"is_sample"`
-	SubtaskID      *int64 `json:"subtask_id"`
+	ProblemID      int64   `json:"problem_id"`
+	OrderIndex     int32   `json:"order_index"`
+	Input          string  `json:"input"`
+	ExpectedOutput string  `json:"expected_output"`
+	IsSample       bool    `json:"is_sample"`
+	SubtaskID      *int64  `json:"subtask_id"`
+	Description    *string `json:"description"`
 }
 
 func (q *Queries) CreateTestCase(ctx context.Context, arg CreateTestCaseParams) (TestCase, error) {
@@ -32,6 +33,7 @@ func (q *Queries) CreateTestCase(ctx context.Context, arg CreateTestCaseParams) 
 		arg.ExpectedOutput,
 		arg.IsSample,
 		arg.SubtaskID,
+		arg.Description,
 	)
 	var i TestCase
 	err := row.Scan(
@@ -42,6 +44,7 @@ func (q *Queries) CreateTestCase(ctx context.Context, arg CreateTestCaseParams) 
 		&i.ExpectedOutput,
 		&i.IsSample,
 		&i.SubtaskID,
+		&i.Description,
 	)
 	return i, err
 }
@@ -65,7 +68,7 @@ func (q *Queries) DeleteTestCasesByProblem(ctx context.Context, problemID int64)
 }
 
 const getSampleTestCases = `-- name: GetSampleTestCases :many
-SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id FROM test_cases WHERE problem_id = $1 AND is_sample = true ORDER BY order_index
+SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id, description FROM test_cases WHERE problem_id = $1 AND is_sample = true ORDER BY order_index
 `
 
 func (q *Queries) GetSampleTestCases(ctx context.Context, problemID int64) ([]TestCase, error) {
@@ -85,6 +88,7 @@ func (q *Queries) GetSampleTestCases(ctx context.Context, problemID int64) ([]Te
 			&i.ExpectedOutput,
 			&i.IsSample,
 			&i.SubtaskID,
+			&i.Description,
 		); err != nil {
 			return nil, err
 		}
@@ -97,7 +101,7 @@ func (q *Queries) GetSampleTestCases(ctx context.Context, problemID int64) ([]Te
 }
 
 const listTestCasesByProblem = `-- name: ListTestCasesByProblem :many
-SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id FROM test_cases WHERE problem_id = $1 ORDER BY order_index
+SELECT id, problem_id, order_index, input, expected_output, is_sample, subtask_id, description FROM test_cases WHERE problem_id = $1 ORDER BY order_index
 `
 
 func (q *Queries) ListTestCasesByProblem(ctx context.Context, problemID int64) ([]TestCase, error) {
@@ -117,6 +121,7 @@ func (q *Queries) ListTestCasesByProblem(ctx context.Context, problemID int64) (
 			&i.ExpectedOutput,
 			&i.IsSample,
 			&i.SubtaskID,
+			&i.Description,
 		); err != nil {
 			return nil, err
 		}
@@ -128,17 +133,32 @@ func (q *Queries) ListTestCasesByProblem(ctx context.Context, problemID int64) (
 	return items, nil
 }
 
+const reorderTestCase = `-- name: ReorderTestCase :exec
+UPDATE test_cases SET order_index = $2 WHERE id = $1
+`
+
+type ReorderTestCaseParams struct {
+	ID         int64 `json:"id"`
+	OrderIndex int32 `json:"order_index"`
+}
+
+func (q *Queries) ReorderTestCase(ctx context.Context, arg ReorderTestCaseParams) error {
+	_, err := q.db.Exec(ctx, reorderTestCase, arg.ID, arg.OrderIndex)
+	return err
+}
+
 const updateTestCase = `-- name: UpdateTestCase :exec
-UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5, order_index = $6 WHERE id = $1
+UPDATE test_cases SET input = $2, expected_output = $3, is_sample = $4, subtask_id = $5, order_index = $6, description = $7 WHERE id = $1
 `
 
 type UpdateTestCaseParams struct {
-	ID             int64  `json:"id"`
-	Input          string `json:"input"`
-	ExpectedOutput string `json:"expected_output"`
-	IsSample       bool   `json:"is_sample"`
-	SubtaskID      *int64 `json:"subtask_id"`
-	OrderIndex     int32  `json:"order_index"`
+	ID             int64   `json:"id"`
+	Input          string  `json:"input"`
+	ExpectedOutput string  `json:"expected_output"`
+	IsSample       bool    `json:"is_sample"`
+	SubtaskID      *int64  `json:"subtask_id"`
+	OrderIndex     int32   `json:"order_index"`
+	Description    *string `json:"description"`
 }
 
 func (q *Queries) UpdateTestCase(ctx context.Context, arg UpdateTestCaseParams) error {
@@ -149,6 +169,7 @@ func (q *Queries) UpdateTestCase(ctx context.Context, arg UpdateTestCaseParams) 
 		arg.IsSample,
 		arg.SubtaskID,
 		arg.OrderIndex,
+		arg.Description,
 	)
 	return err
 }

@@ -139,6 +139,7 @@ type SubmissionTestResult struct {
 	MemoryKb     int32  `json:"memory_kb"`
 	Stdout       string `json:"stdout"`
 	Stderr       string `json:"stderr"`
+	VszKb        int32  `json:"vsz_kb"`
 }
 
 type Subtask struct {
@@ -150,13 +151,14 @@ type Subtask struct {
 }
 
 type TestCase struct {
-	ID             int64  `json:"id"`
-	ProblemID      int64  `json:"problem_id"`
-	OrderIndex     int32  `json:"order_index"`
-	Input          string `json:"input"`
-	ExpectedOutput string `json:"expected_output"`
-	IsSample       bool   `json:"is_sample"`
-	SubtaskID      *int64 `json:"subtask_id"`
+	ID             int64   `json:"id"`
+	ProblemID      int64   `json:"problem_id"`
+	OrderIndex     int32   `json:"order_index"`
+	Input          string  `json:"input"`
+	ExpectedOutput string  `json:"expected_output"`
+	IsSample       bool    `json:"is_sample"`
+	SubtaskID      *int64  `json:"subtask_id"`
+	Description    *string `json:"description"`
 }
 
 type User struct {

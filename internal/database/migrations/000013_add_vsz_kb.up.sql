@@ -1,0 +1,1 @@
+ALTER TABLE submission_test_results ADD COLUMN IF NOT EXISTS vsz_kb INTEGER NOT NULL DEFAULT 0;

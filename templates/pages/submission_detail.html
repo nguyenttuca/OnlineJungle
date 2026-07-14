@@ -21,6 +21,7 @@
                 <th>Verdict</th>
                 <th>Time (ms)</th>
                 <th>Memory (KB)</th>
+                <th>VSZ (KB)</th>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +31,7 @@
                 <td>{{ .Verdict }}</td>
                 <td>{{ .TimeMs }}</td>
                 <td>{{ .MemoryKb }}</td>
+                <td>{{ .VszKb }}</td>
             </tr>
             {{ end }}
         </tbody>

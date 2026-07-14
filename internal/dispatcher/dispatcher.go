@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/tuantu/oj-web/internal/checkers"
 	"github.com/tuantu/oj-web/internal/database/sqlcdb"
 	"github.com/tuantu/oj-web/internal/judgepool"
 )
@@ -111,15 +112,40 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 		return
 	}
 
-	// Prepare Judge API Request
+	runAllTests := true
+	if sub.ContestID != nil {
+		contest, err := d.Queries.GetContestByID(d.Ctx, *sub.ContestID)
+		if err == nil && contest.RankingType == "ICPC" {
+			runAllTests = false
+		}
+	}
+
+	checkerType := problem.CheckerType
+	customCheckerCode := problem.CustomCheckerCode
+
+	if checkerType != "diff" {
+		// Both 'custom' and standard checkers (fcmp, wcmp...) go here
+		encodedCode, err := checkers.PrepareCheckerSource(checkerType, customCheckerCode)
+		if err != nil {
+			log.Printf("Failed to prepare checker source for sub %d: %v", sub.ID, err)
+			d.Queries.UpdateSubmissionFailed(d.Ctx, sqlcdb.UpdateSubmissionFailedParams{
+				ID:            sub.ID,
+				CompileOutput: "Internal Error: Checker source preparation failed",
+			})
+			return
+		}
+		checkerType = "custom"
+		customCheckerCode = encodedCode
+	}
+
 	req := judgepool.JudgeRequest{
 		Language:          sub.Language,
 		SourceCode:        sub.SourceCode,
 		TimeLimitMs:       problem.TimeLimitMs,
 		MemoryLimitMb:     problem.MemoryLimitMb,
-		CheckerType:       problem.CheckerType,
-		CustomCheckerCode: problem.CustomCheckerCode,
-		RunAllTests:       false,
+		CheckerType:       checkerType,
+		CustomCheckerCode: customCheckerCode,
+		RunAllTests:       runAllTests,
 	}
 
 	for _, tc := range testCases {
@@ -196,6 +222,7 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 			Verdict:      tr.Verdict,
 			TimeMs:       int32(tr.TimeMs),
 			MemoryKb:     int32(tr.MemoryKb),
+			VszKb:        int32(tr.VszKb),
 			Stdout:       tr.Stdout,
 			Stderr:       tr.Stderr,
 		})

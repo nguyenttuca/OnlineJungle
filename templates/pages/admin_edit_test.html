@@ -15,75 +15,19 @@
     <form action="/admin/problems/{{ .Data.Problem.Slug }}/tests" enctype="multipart/form-data" method="POST" id="testCasesForm">
         <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
         
-        <!-- General Configuration Panel -->
+        <!-- Zip Upload Panel -->
         <div class="dmoj-panel mb-4 shadow-sm">
             <div class="dmoj-row">
                 <div class="dmoj-label">Tập tin dữ liệu nén dạng zip:</div>
                 <div class="dmoj-content">
                     <div class="mb-2">
-                        Hiện nay: <code>data.zip</code> <label class="ms-2"><input type="checkbox" name="reset_zip" value="1"> Đặt lại</label>
-                    </div>
-                    <div class="mb-2">
                         Thay đổi: <input type="file" name="problem-data-zipfile" id="problem-data-zipfile" accept=".zip" class="form-control form-control-sm d-inline-block w-auto">
                     </div>
-                    <button type="submit" class="btn btn-sm btn-dmoj-action mt-2" id="btn-import">Nhấn nút này nếu bạn mới thay đổi file test</button>
+                    <button type="submit" class="btn btn-sm btn-dmoj-action mt-2" id="btn-import">Tải lên file Zip</button>
                     <div class="form-text mt-2" style="font-size: 0.85rem;">
                         Hỗ trợ Input: .in, .inp, .input | Output: .out, .ans, .answer.<br>
                         Tự động ghép cặp theo tên file (VD: 1.in & 1.out). Tự động nhận diện Sample Test (thêm chữ "sample" vào tên file).
                     </div>
-                </div>
-            </div>
-            
-            <div class="dmoj-row">
-                <div class="dmoj-label">Grader:</div>
-                <div class="dmoj-content">
-                    <select name="grader" class="form-select form-select-sm w-auto">
-                        <option value="default" selected>Mặc định</option>
-                        <option value="custom">Tùy chỉnh</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="dmoj-row">
-                <div class="dmoj-label">IO Method:</div>
-                <div class="dmoj-content d-flex align-items-center gap-2">
-                    <select name="io_method" class="form-select form-select-sm w-auto">
-                        <option value="standard">Standard IO</option>
-                        <option value="file" selected>Sử dụng file</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="dmoj-row">
-                <div class="dmoj-label">Tập tin đầu vào:</div>
-                <div class="dmoj-content">
-                    <input type="text" name="file_input_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.INP">
-                </div>
-            </div>
-
-            <div class="dmoj-row">
-                <div class="dmoj-label">Tập tin đầu ra:</div>
-                <div class="dmoj-content">
-                    <input type="text" name="file_output_name" class="form-control form-control-sm w-50" placeholder="VD: TONGK.OUT">
-                </div>
-            </div>
-
-            <div class="dmoj-row">
-                <div class="dmoj-label">Trình chấm:</div>
-                <div class="dmoj-content d-flex align-items-center gap-3">
-                    <select name="checker" class="form-select form-select-sm w-auto">
-                        <option value="default" selected>Mặc định</option>
-                        <option value="custom">Tùy chỉnh</option>
-                    </select>
-                    <a href="#" class="text-decoration-none" style="font-size: 0.9rem;">Hướng dẫn</a>
-                </div>
-            </div>
-
-            <div class="dmoj-row">
-                <div class="dmoj-label">Hạn chế chiều dài đầu ra:</div>
-                <div class="dmoj-content">
-                    <input type="number" name="output_limit" class="form-control form-control-sm w-25 mb-1">
-                    <span class="form-text" style="font-size: 0.85rem;">Có thể bỏ trống. Chỉ thay đổi nếu độ dài của output quá dài (hơn 20Mb).</span>
                 </div>
             </div>
         </div>
@@ -96,13 +40,12 @@
                         <th width="40" class="text-center">
                             <button type="button" class="btn btn-sm btn-add-row" id="btnAddRow" title="Thêm Test Case">+</button>
                         </th>
-                        <th width="50" class="text-center">STT</th>
-                        <th width="150">Kiểu</th>
-                        <th>Tập tin đầu vào</th>
-                        <th>Tập tin đầu ra</th>
-                        <th width="80" class="text-center">Điểm</th>
-                        <th width="80" class="text-center">Pretest?</th>
-                        <th width="60" class="text-center">Xoá?</th>
+                        <th width="50" class="text-center">Test #</th>
+                        <th>Dữ liệu (Input)</th>
+                        <th>Đáp án (Output)</th>
+                        <th>Ghi chú (Description)</th>
+                        <th width="100" class="text-center">Dùng làm Mẫu?</th>
+                        <th width="60" class="text-center">Xoá</th>
                     </tr>
                 </thead>
                 <tbody id="testcasesBody">
@@ -112,13 +55,10 @@
                             <td class="text-center align-middle">
                                 <span class="drag-handle"><i class="bi bi-three-dots-vertical"></i><i class="bi bi-three-dots-vertical" style="margin-left:-8px"></i></span>
                             </td>
-                            <td class="text-center align-middle font-weight-bold row-index">{{ add $idx 1 }}</td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle font-weight-bold row-index">
+                                {{ add $idx 1 }}
+                                <input type="hidden" name="test_order[]" value="{{ add $idx 1 }}">
                                 <input type="hidden" name="test_ids[]" value="{{ $tc.ID }}">
-                                <select name="test_types[]" class="form-select form-select-sm">
-                                    <option value="single" selected>Test đơn</option>
-                                    <option value="batch">Test chùm</option>
-                                </select>
                             </td>
                             <td class="align-middle position-relative">
                                 <textarea name="test_inputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;">{{ $tc.Input }}</textarea>
@@ -126,8 +66,8 @@
                             <td class="align-middle position-relative">
                                 <textarea name="test_outputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;">{{ $tc.ExpectedOutput }}</textarea>
                             </td>
-                            <td class="align-middle">
-                                <input type="number" step="0.1" name="test_points[]" class="form-control form-control-sm text-center" value="1">
+                            <td class="align-middle position-relative">
+                                <textarea name="test_descriptions[]" class="form-control form-control-sm" rows="2" style="resize: vertical; min-height: 40px;">{{ if $tc.Description.Valid }}{{ $tc.Description.String }}{{ end }}</textarea>
                             </td>
                             <td class="text-center align-middle">
                                 <input type="hidden" name="test_pretests[]" value="{{ if $tc.IsSample }}1{{ else }}0{{ end }}">
@@ -145,13 +85,10 @@
                             <td class="text-center align-middle">
                                 <span class="drag-handle"><i class="bi bi-three-dots-vertical"></i><i class="bi bi-three-dots-vertical" style="margin-left:-8px"></i></span>
                             </td>
-                            <td class="text-center align-middle font-weight-bold row-index">1</td>
-                            <td class="align-middle">
+                            <td class="text-center align-middle font-weight-bold row-index">
+                                1
+                                <input type="hidden" name="test_order[]" value="1">
                                 <input type="hidden" name="test_ids[]" value="0">
-                                <select name="test_types[]" class="form-select form-select-sm">
-                                    <option value="single" selected>Test đơn</option>
-                                    <option value="batch">Test chùm</option>
-                                </select>
                             </td>
                             <td class="align-middle position-relative">
                                 <textarea name="test_inputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;"></textarea>
@@ -159,8 +96,8 @@
                             <td class="align-middle position-relative">
                                 <textarea name="test_outputs[]" class="form-control form-control-sm pe-4" rows="2" style="resize: vertical; min-height: 40px; font-family: monospace;"></textarea>
                             </td>
-                            <td class="align-middle">
-                                <input type="number" step="0.1" name="test_points[]" class="form-control form-control-sm text-center" value="1">
+                            <td class="align-middle position-relative">
+                                <textarea name="test_descriptions[]" class="form-control form-control-sm" rows="2" style="resize: vertical; min-height: 40px;"></textarea>
                             </td>
                             <td class="text-center align-middle">
                                 <input type="hidden" name="test_pretests[]" value="0">
@@ -355,10 +292,11 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach((row, index) => {
             const sttCell = row.querySelector('.row-index');
             if (sttCell) {
-                sttCell.innerText = index + 1;
+                // Update text node directly while keeping inputs
+                sttCell.childNodes[0].nodeValue = (index + 1) + '\n';
+                const orderInput = sttCell.querySelector('input[name="test_order[]"]');
+                if (orderInput) orderInput.value = index + 1;
             }
-            // Do chúng ta dùng name array thuần (test_inputs[]) nên DOM order sẽ định đoạt thứ tự gửi lên Backend.
-            // Không cần đổi attribute name ở đây.
         });
     }
 

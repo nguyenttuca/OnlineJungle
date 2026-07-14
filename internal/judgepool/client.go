@@ -31,6 +31,7 @@ type TestResult struct {
 	Verdict   string  `json:"verdict"`
 	TimeMs    float64 `json:"time_ms"`
 	MemoryKb  float64 `json:"memory_kb"`
+	VszKb     float64 `json:"vsz_kb"`
 	Stdout    string  `json:"stdout"`
 	Stderr    string  `json:"stderr"`
 }

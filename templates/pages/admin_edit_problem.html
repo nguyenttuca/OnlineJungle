@@ -102,6 +102,28 @@
                             <input type="number" name="memory_limit" class="form-control" required value="{{ .Data.Problem.MemoryLimitMb }}">
                         </div>
                         <div class="mb-3">
+                            <label class="form-label fw-bold">Trình chấm (Checker)</label>
+                            <select name="checker_type" id="checkerTypeSelect" class="form-select">
+                                <option value="diff" {{ if eq .Data.Problem.CheckerType "diff" }}selected{{ end }}>Standard Diff (Mặc định)</option>
+                                <option value="fcmp" {{ if eq .Data.Problem.CheckerType "fcmp" }}selected{{ end }}>fcmp (Float compare)</option>
+                                <option value="hcmp" {{ if eq .Data.Problem.CheckerType "hcmp" }}selected{{ end }}>hcmp (Huge integer compare)</option>
+                                <option value="lcmp" {{ if eq .Data.Problem.CheckerType "lcmp" }}selected{{ end }}>lcmp (Long integer compare)</option>
+                                <option value="ncmp" {{ if eq .Data.Problem.CheckerType "ncmp" }}selected{{ end }}>ncmp (Single/Multiple integer compare)</option>
+                                <option value="nyesno" {{ if eq .Data.Problem.CheckerType "nyesno" }}selected{{ end }}>nyesno (Multiple Yes/No compare)</option>
+                                <option value="rcmp4" {{ if eq .Data.Problem.CheckerType "rcmp4" }}selected{{ end }}>rcmp4 (Double compare 4 digits)</option>
+                                <option value="rcmp6" {{ if eq .Data.Problem.CheckerType "rcmp6" }}selected{{ end }}>rcmp6 (Double compare 6 digits)</option>
+                                <option value="rcmp9" {{ if eq .Data.Problem.CheckerType "rcmp9" }}selected{{ end }}>rcmp9 (Double compare 9 digits)</option>
+                                <option value="wcmp" {{ if eq .Data.Problem.CheckerType "wcmp" }}selected{{ end }}>wcmp (Sequence of tokens compare)</option>
+                                <option value="yesno" {{ if eq .Data.Problem.CheckerType "yesno" }}selected{{ end }}>yesno (Single Yes/No compare)</option>
+                                <option value="custom" {{ if eq .Data.Problem.CheckerType "custom" }}selected{{ end }}>Custom Checker (C++)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="customCheckerDiv" style="display: none;">
+                            <label class="form-label fw-bold">Custom Checker Code <span class="text-danger">*</span></label>
+                            <textarea name="custom_checker_code" class="form-control font-monospace" rows="8" placeholder="#include <testlib.h>&#10;&#10;int main(int argc, char* argv[]) {&#10;    registerTestlibCmd(argc, argv);&#10;    // ...&#10;}">{{ .Data.Problem.CustomCheckerCode }}</textarea>
+                            <div class="form-text">Viết bằng C++ dựa trên testlib. Thư viện testlib.h sẽ được tự động đính kèm.</div>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Hiển thị Testcase</label>
                             <select name="testcase_visibility" class="form-select">
                                 <option value="hidden" {{ if eq .Data.Problem.TestcaseVisibility "hidden" }}selected{{ end }}>Ẩn toàn bộ</option>
@@ -200,7 +222,22 @@ document.addEventListener('DOMContentLoaded', function() {
         tagsHiddenField.value = JSON.stringify(tags);
     }
 
-    // Initial render
+    // Checker Type Select Logic
+    const checkerTypeSelect = document.getElementById('checkerTypeSelect');
+    const customCheckerDiv = document.getElementById('customCheckerDiv');
+
+    function toggleCheckerDiv() {
+        if (checkerTypeSelect.value === 'custom') {
+            customCheckerDiv.style.display = 'block';
+        } else {
+            customCheckerDiv.style.display = 'none';
+        }
+    }
+
+    checkerTypeSelect.addEventListener('change', toggleCheckerDiv);
+    toggleCheckerDiv(); // Initial state
+
+    // Tag removal render
     updateTags();
 
     tagInput.addEventListener('keydown', function(e) {

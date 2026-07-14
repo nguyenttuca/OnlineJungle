@@ -388,8 +388,8 @@ func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Reque
 		OutputDesc:        problem.OutputDesc,
 		ConstraintsDesc:   problem.ConstraintsDesc,
 		Examples:          problem.Examples,
-		CheckerType:       problem.CheckerType,
-		CustomCheckerCode: problem.CustomCheckerCode,
+		CheckerType:       r.FormValue("checker_type"),
+		CustomCheckerCode: r.FormValue("custom_checker_code"),
 		EditorialContent:  r.FormValue("editorial_content"),
 		Tags:              []byte(tags),
 		TestcaseVisibility: r.FormValue("testcase_visibility"),
@@ -493,6 +493,8 @@ func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, probl
 	testIDs := r.PostForm["test_ids[]"]
 	inputs := r.PostForm["test_inputs[]"]
 	outputs := r.PostForm["test_outputs[]"]
+	descriptions := r.PostForm["test_descriptions[]"]
+	orders := r.PostForm["test_order[]"]
 	pretests := r.PostForm["test_pretests[]"]
 	deletes := r.PostForm["test_deletes[]"]
 	
@@ -525,9 +527,27 @@ func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, probl
 		if i < len(pretests) && pretests[i] == "1" {
 			isSample = true
 		}
+		
+		desc := ""
+		if i < len(descriptions) {
+			desc = descriptions[i]
+		}
+		
+		orderIdx := i + 1
+		if i < len(orders) {
+			o, err := strconv.Atoi(orders[i])
+			if err == nil && o > 0 {
+				orderIdx = o
+			}
+		}
 
 		cleanInput := strings.ReplaceAll(inputs[i], "\r\n", "\n")
 		cleanOutput := strings.ReplaceAll(outputs[i], "\r\n", "\n")
+
+		var dbDesc *string
+		if desc != "" {
+			dbDesc = &desc
+		}
 
 		if id > 0 {
 			err = qtx.UpdateTestCase(ctx, sqlcdb.UpdateTestCaseParams{
@@ -535,7 +555,8 @@ func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, probl
 				Input:          cleanInput,
 				ExpectedOutput: cleanOutput,
 				IsSample:       isSample,
-				OrderIndex:     int32(i + 1),
+				OrderIndex:     int32(orderIdx),
+				Description:    dbDesc,
 			})
 			if err != nil {
 				return "", fmt.Errorf("failed to update test case %d: %v", id, err)
@@ -545,10 +566,11 @@ func (env *Env) HandleManualTestSave(ctx context.Context, r *http.Request, probl
 			// create new
 			tc, err := qtx.CreateTestCase(ctx, sqlcdb.CreateTestCaseParams{
 				ProblemID:      problemID,
-				OrderIndex:     int32(i + 1),
+				OrderIndex:     int32(orderIdx),
 				Input:          cleanInput,
 				ExpectedOutput: cleanOutput,
 				IsSample:       isSample,
+				Description:    dbDesc,
 			})
 			if err != nil {
 				return "", fmt.Errorf("failed to create test case: %v", err)

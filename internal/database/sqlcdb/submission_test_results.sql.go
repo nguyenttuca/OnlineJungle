@@ -10,8 +10,8 @@ import (
 )
 
 const createTestResult = `-- name: CreateTestResult :exec
-INSERT INTO submission_test_results (submission_id, test_index, verdict, time_ms, memory_kb, stdout, stderr)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO submission_test_results (submission_id, test_index, verdict, time_ms, memory_kb, vsz_kb, stdout, stderr)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreateTestResultParams struct {
@@ -20,6 +20,7 @@ type CreateTestResultParams struct {
 	Verdict      string `json:"verdict"`
 	TimeMs       int32  `json:"time_ms"`
 	MemoryKb     int32  `json:"memory_kb"`
+	VszKb        int32  `json:"vsz_kb"`
 	Stdout       string `json:"stdout"`
 	Stderr       string `json:"stderr"`
 }
@@ -31,6 +32,7 @@ func (q *Queries) CreateTestResult(ctx context.Context, arg CreateTestResultPara
 		arg.Verdict,
 		arg.TimeMs,
 		arg.MemoryKb,
+		arg.VszKb,
 		arg.Stdout,
 		arg.Stderr,
 	)
@@ -47,7 +49,7 @@ func (q *Queries) DeleteTestResultsBySubmission(ctx context.Context, submissionI
 }
 
 const listTestResultsBySubmission = `-- name: ListTestResultsBySubmission :many
-SELECT id, submission_id, test_index, verdict, time_ms, memory_kb, stdout, stderr FROM submission_test_results WHERE submission_id = $1 ORDER BY test_index
+SELECT id, submission_id, test_index, verdict, time_ms, memory_kb, stdout, stderr, vsz_kb FROM submission_test_results WHERE submission_id = $1 ORDER BY test_index
 `
 
 func (q *Queries) ListTestResultsBySubmission(ctx context.Context, submissionID int64) ([]SubmissionTestResult, error) {
@@ -68,6 +70,7 @@ func (q *Queries) ListTestResultsBySubmission(ctx context.Context, submissionID 
 			&i.MemoryKb,
 			&i.Stdout,
 			&i.Stderr,
+			&i.VszKb,
 		); err != nil {
 			return nil, err
 		}
