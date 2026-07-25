@@ -1,43 +1,94 @@
 {{ define "page" }}
-<div class="container pb-5">
+<div class="container-fluid pb-5 px-4 mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Submit Solution - {{ .Data.Problem.Title}}</h2>
+        <h2>Submit Solution</h2>
         {{ if .Data.ContestID }}
-        <a href="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug}}" class="btn btn-outline-secondary">Trở về bài toán</a>
+        <a href="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug}}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Problem</a>
         {{ else }}
-        <a href="/problems/{{ .Data.Problem.Slug}}" class="btn btn-outline-secondary">Trở về bài toán</a>
+        <a href="/problems/{{ .Data.Problem.Slug}}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Problem</a>
         {{ end }}
     </div>
 
     {{ if .Data.Error }}
-    <div class="alert alert-danger">{{ .Data.Error }}</div>
+    <div class="alert alert-danger shadow-sm">{{ .Data.Error }}</div>
     {{ end }}
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            {{ if .Data.ContestID }}
-            <form action="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug }}/submit" method="POST">
-            {{ else }}
-            <form action="/problems/{{ .Data.Problem.Slug }}/submit" method="POST">
-            {{ end }}
-                <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
-                <div class="mb-3">
-                    <label for="language" class="form-label">Language:</label>
-                    <select name="language" id="language" class="form-select w-25">
-                        <option value="cpp">C++ (GCC)</option>
-                        <option value="python">Python 3</option>
-                        <option value="java">Java</option>
-                    </select>
+    <div class="row">
+        <!-- Sidebar Info -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0">
+                    <h5 class="mb-0 text-primary">{{ .Data.Problem.Title }}</h5>
                 </div>
-                
-                <div class="mb-3">
-                    <label for="source_code" class="form-label">Source code:</label>
-                    <textarea name="source_code" id="source_code" class="form-control" rows="20" style="font-family: monospace;" required></textarea>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-4" style="font-size: 0.9rem;">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-stopwatch me-1"></i> Time limit</span>
+                            <strong>{{ .Data.Problem.TimeLimitMs }}ms</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                            <span class="text-muted"><i class="bi bi-memory me-1"></i> Memory limit</span>
+                            <strong>{{ .Data.Problem.MemoryLimitMb }}MB</strong>
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-info py-2 px-3" style="font-size: 0.85rem;">
+                        <i class="bi bi-info-circle me-1"></i> You can write your code here or paste it from your favorite editor. The code is auto-saved locally.
+                    </div>
                 </div>
-                
-                <button type="submit" class="btn btn-primary px-4">Submit</button>
-            </form>
+            </div>
+        </div>
+
+        <!-- Editor Content -->
+        <div class="col-lg-9 col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    {{ if .Data.ContestID }}
+                    <form action="/contests/{{ .Data.ContestID }}/problems/{{ .Data.Problem.Slug }}/submit" method="POST" id="submitForm">
+                    {{ else }}
+                    <form action="/problems/{{ .Data.Problem.Slug }}/submit" method="POST" id="submitForm">
+                    {{ end }}
+                        <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+                        
+                        <!-- Toolbar -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background: var(--bg-card-header);">
+                            <div class="d-flex align-items-center">
+                                <label for="language" class="form-label mb-0 me-2 fw-semibold">Language:</label>
+                                <select name="language" id="language" class="form-select form-select-sm" style="width: auto; min-width: 150px;">
+                                    <option value="cpp">C++ (GCC)</option>
+                                    <option value="python">Python 3</option>
+                                    <option value="java">Java</option>
+                                </select>
+                            </div>
+                            <div>
+                                <span class="badge bg-success" style="font-size: 0.75rem;"><i class="bi bi-check-circle me-1"></i>Available on judge</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden Textarea for Form Submit -->
+                        <textarea name="source_code" id="source_code" style="display: none;" required></textarea>
+                        
+                        <!-- Monaco Editor Container -->
+                        <div id="monaco-editor-container" class="editor-container" style="border: none; border-radius: 0;"></div>
+                        
+                        <!-- Footer Action -->
+                        <div class="p-3 border-top bg-transparent d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to submit</small>
+                            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm">
+                                <i class="bi bi-cloud-arrow-up me-2"></i> Submit Solution
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+<!-- Load Monaco Editor via RequireJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<!-- Initialize Editor -->
+<script src="/static/js/editor.js"></script>
 {{ end }}

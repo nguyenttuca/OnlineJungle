@@ -1,83 +1,97 @@
 {{ define "page" }}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h2>Problem Set</h2>
+<div class="container pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h2><i class="bi bi-puzzle me-2"></i>Problem Set</h2>
     </div>
 
     <!-- Search Bar -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="GET" action="/problems" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label for="q" class="form-label">Search (ID, Name)</label>
-                    <input type="text" class="form-control" id="q" name="q" value="{{ .Data.Q }}" placeholder="e.g. 1001, A + B">
+    <div class="filter-bar">
+        <form method="GET" action="/problems" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="q" class="form-label text-muted small mb-1">Search (ID, Name)</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="q" name="q" value="{{ .Data.Q }}" placeholder="e.g. 1001, A + B">
                 </div>
-                <div class="col-md-3">
-                    <label for="category" class="form-label">Category</label>
-                    <select class="form-select" id="category" name="category">
-                        <option value="">All Categories</option>
-                        {{ $currentCat := .Data.Category }}
-                        {{ range .Data.Categories }}
-                            <option value="{{ . }}" {{ if eq . $currentCat }}selected{{ end }}>{{ . }}</option>
-                        {{ end }}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" id="status" name="status">
-                        <option value="all" {{ if eq .Data.Status "all" }}selected{{ end }}>All</option>
-                        <option value="solved" {{ if eq .Data.Status "solved" }}selected{{ end }}>Solved</option>
-                        <option value="attempted" {{ if eq .Data.Status "attempted" }}selected{{ end }}>Attempted</option>
-                        <option value="unsolved" {{ if eq .Data.Status "unsolved" }}selected{{ end }}>Unsolved</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <div class="col-md-3">
+                <label for="category" class="form-label text-muted small mb-1">Category</label>
+                <select class="form-select form-select-sm" id="category" name="category">
+                    <option value="">All Categories</option>
+                    {{ $currentCat := .Data.Category }}
+                    {{ range .Data.Categories }}
+                        <option value="{{ . }}" {{ if eq . $currentCat }}selected{{ end }}>{{ . }}</option>
+                    {{ end }}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label text-muted small mb-1">Status</label>
+                <select class="form-select form-select-sm" id="status" name="status">
+                    <option value="all" {{ if eq .Data.Status "all" }}selected{{ end }}>All</option>
+                    <option value="solved" {{ if eq .Data.Status "solved" }}selected{{ end }}>Solved</option>
+                    <option value="attempted" {{ if eq .Data.Status "attempted" }}selected{{ end }}>Attempted</option>
+                    <option value="unsolved" {{ if eq .Data.Status "unsolved" }}selected{{ end }}>Unsolved</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    Filter
+                </button>
+            </div>
+        </form>
     </div>
 
-    <table class="table table-hover table-bordered shadow-sm bg-white">
-        <thead class="table-light">
-            <tr>
-                <th style="width: 15%">Status</th>
-                <th>Task</th>
-                <th style="width: 25%">Category</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Data.Problems }}
-            <tr>
-                <td class="align-middle fw-bold">
-                    {{ if ne .UserStatus "" }}
-                        {{ if eq .UserStatus "AC" }}
-                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> AC</span>
-                        {{ else }}
-                            <span class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Attempted</span>
-                        {{ end }}
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 15%">Status</th>
+                        <th>Problem</th>
+                        <th style="width: 25%">Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Data.Problems }}
+                    <tr>
+                        <td class="ps-4">
+                            {{ if ne .UserStatus "" }}
+                                {{ if eq .UserStatus "AC" }}
+                                    <span class="badge verdict-ac"><i class="bi bi-check me-1"></i>Solved</span>
+                                {{ else }}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-dash me-1"></i>Attempted</span>
+                                {{ end }}
+                            {{ else }}
+                                <span class="badge bg-secondary opacity-50">Unsolved</span>
+                            {{ end }}
+                        </td>
+                        <td>
+                            <a href="/problems/{{ .Slug }}" class="text-decoration-none fw-semibold d-block text-body">
+                                {{ .Title }}
+                            </a>
+                            {{ if $.User }}
+                                {{ if eq $.User.Role "admin" }}
+                                    <div class="mt-1">
+                                        <a href="/admin/problems/{{ .Slug }}/edit" class="badge bg-warning text-dark text-decoration-none"><i class="bi bi-pencil me-1"></i>Edit</a>
+                                    </div>
+                                {{ end }}
+                            {{ end }}
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">{{ .Category }}</span>
+                        </td>
+                    </tr>
                     {{ else }}
-                        <span class="text-muted">-</span>
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">
+                            <i class="bi bi-search fs-1 d-block mb-3"></i>
+                            No problems found matching your criteria.
+                        </td>
+                    </tr>
                     {{ end }}
-                </td>
-                <td class="align-middle">
-                    <a href="/problems/{{ .Slug }}" class="text-decoration-none fw-bold">{{ .Title }}</a>
-                    {{ if $.User }}
-                        {{ if eq $.User.Role "admin" }}
-                            <a href="/admin/problems/{{ .Slug }}/edit" class="ms-2 badge bg-warning text-dark text-decoration-none">Edit</a>
-                        {{ end }}
-                    {{ end }}
-                </td>
-                <td class="align-middle text-muted">{{ .Category }}</td>
-            </tr>
-            {{ else }}
-            <tr>
-                <td colspan="3" class="text-center py-4 text-muted">No problems found matching your criteria.</td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {{ end }}

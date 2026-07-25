@@ -1,35 +1,114 @@
 {{ define "page" }}
-<div class="container">
-    <h2>Leaderboard</h2>
-    <div class="card">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>User</th>
-                    <th>Display Name</th>
-                    <th>Solved Problems</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{ range $index, $user := .Data.Users }}
-                <tr>
-                    <td><strong>#{{ add $index 1 }}</strong></td>
-                    <td>
-                        <a href="/users/{{ $user.Username }}" style="text-decoration: none; font-weight: bold; {{ if eq $user.Role "admin" }}color: #ff9800;{{ else }}color: var(--primary-color);{{ end }}">
-                            {{ $user.Username }}
-                        </a>
-                    </td>
-                    <td>{{ $user.DisplayName }}</td>
-                    <td><span class="badge" style="background-color: #28a745;">{{ $user.SolvedCount }}</span></td>
-                </tr>
-                {{ else }}
-                <tr>
-                    <td colspan="4" style="text-align: center;">No users found.</td>
-                </tr>
-                {{ end }}
-            </tbody>
-        </table>
+<div class="container pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-5 mt-4">
+        <h2><i class="bi bi-trophy-fill me-2 text-warning"></i>Leaderboard</h2>
+    </div>
+
+    {{ if gt (len .Data.Users) 0 }}
+    <!-- Podium for Top 3 -->
+    <div class="podium-container">
+        <!-- Rank 2 -->
+        {{ if gt (len .Data.Users) 1 }}
+        {{ $user2 := index .Data.Users 1 }}
+        <div class="podium-step podium-2">
+            <div class="podium-avatar d-flex align-items-center justify-content-center fw-bold fs-4 text-muted text-uppercase">
+                {{ slice $user2.Username 0 1 }}
+            </div>
+            <div class="podium-block">
+                <span>#2</span>
+                <span class="small fw-normal text-truncate w-100 px-1 text-center" title="{{ $user2.Username }}">{{ $user2.Username }}</span>
+                <span class="badge bg-light text-dark mt-1">{{ $user2.SolvedCount }}</span>
+            </div>
+        </div>
+        {{ end }}
+
+        <!-- Rank 1 -->
+        {{ $user1 := index .Data.Users 0 }}
+        <div class="podium-step podium-1">
+            <div class="podium-avatar d-flex align-items-center justify-content-center fw-bold fs-3 text-warning text-uppercase">
+                {{ slice $user1.Username 0 1 }}
+            </div>
+            <div class="podium-block">
+                <span>#1</span>
+                <span class="small fw-normal text-truncate w-100 px-1 text-center" title="{{ $user1.Username }}">{{ $user1.Username }}</span>
+                <span class="badge bg-light text-dark mt-1">{{ $user1.SolvedCount }}</span>
+            </div>
+        </div>
+
+        <!-- Rank 3 -->
+        {{ if gt (len .Data.Users) 2 }}
+        {{ $user3 := index .Data.Users 2 }}
+        <div class="podium-step podium-3">
+            <div class="podium-avatar d-flex align-items-center justify-content-center fw-bold fs-5 text-secondary text-uppercase" style="color: #cd7f32 !important;">
+                {{ slice $user3.Username 0 1 }}
+            </div>
+            <div class="podium-block">
+                <span>#3</span>
+                <span class="small fw-normal text-truncate w-100 px-1 text-center" title="{{ $user3.Username }}">{{ $user3.Username }}</span>
+                <span class="badge bg-light text-dark mt-1">{{ $user3.SolvedCount }}</span>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 100px;">Rank</th>
+                        <th>User</th>
+                        <th>Display Name</th>
+                        <th class="text-end pe-4">Solved Problems</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range $index, $user := .Data.Users }}
+                    <tr {{ if lt $index 3 }}class="bg-light" style="--bs-bg-opacity: .03;"{{ end }}>
+                        <td class="ps-4">
+                            <span class="fw-bold fs-5 {{ if eq $index 0 }}text-warning{{ else if eq $index 1 }}text-secondary{{ else if eq $index 2 }}text-orange{{ else }}text-muted{{ end }}" {{ if eq $index 2 }}style="color: #cd7f32 !important;"{{ end }}>
+                                #{{ add $index 1 }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3 d-flex align-items-center justify-content-center bg-primary text-white fw-bold rounded-circle shadow-sm text-uppercase" style="width: 40px; height: 40px;">
+                                    {{ slice $user.Username 0 1 }}
+                                </div>
+                                <a href="/users/{{ $user.Username }}" class="text-decoration-none fw-bold fs-6 {{ if eq $user.Role "admin" }}text-danger{{ else }}text-body{{ end }}">
+                                    {{ $user.Username }}
+                                    {{ if eq $user.Role "admin" }}<i class="bi bi-shield-fill-check ms-1" data-bs-toggle="tooltip" title="Admin"></i>{{ end }}
+                                </a>
+                            </div>
+                        </td>
+                        <td class="text-muted">{{ if $user.DisplayName }}{{ $user.DisplayName }}{{ else }}<span class="fst-italic opacity-50">Not set</span>{{ end }}</td>
+                        <td class="text-end pe-4">
+                            <span class="badge bg-success rounded-pill px-3 py-2 fs-6 shadow-sm">{{ $user.SolvedCount }}</span>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-3"></i>
+                            No users found.
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {{ end }}

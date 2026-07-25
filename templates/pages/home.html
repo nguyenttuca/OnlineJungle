@@ -1,37 +1,96 @@
 {{ define "page" }}
-<div class="hero mb-5 pb-3 border-bottom">
-    <h1 class="display-4">Welcome to Top OJ</h1>
-    <p class="lead">TopLearn - toplearn.vn</p>
-    <div class="actions mt-4">
-        <a href="/problems" class="btn btn-primary btn-lg">Solve Problems</a>
-        <a href="/contests" class="btn btn-outline-secondary btn-lg ms-2">View Contests</a>
+<div class="container pb-5">
+    <!-- Hero Section -->
+    <div class="hero shadow-sm mb-5">
+        <h1 class="display-3 fw-bold mb-3" style="color: var(--link-color); letter-spacing: -1px;">Online Jungle</h1>
+        <p class="lead mb-4 fw-normal opacity-75">The premier platform for algorithmic programming and competitive coding.</p>
+        <div class="actions mt-4 d-flex justify-content-center gap-3">
+            <a href="/problems" class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill shadow-sm"><i class="bi bi-puzzle me-2"></i>Solve Problems</a>
+            <a href="/contests" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold rounded-pill"><i class="bi bi-trophy me-2"></i>View Contests</a>
+        </div>
     </div>
-</div>
 
-<div class="blogs-section mt-5">
-    <h3 class="mb-4 d-flex justify-content-between align-items-center">
-        Latest News & Blogs
-        <a href="/blogs" class="btn btn-sm btn-outline-primary">View All</a>
-    </h3>
-    {{ if .Data.Blogs }}
-        <div class="row row-cols-1 row-cols-md-2 g-4">
-            {{ range .Data.Blogs }}
-            <div class="col">
-                <div class="card h-100 shadow-sm">
+    <div class="row g-4 mt-2">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0"><i class="bi bi-newspaper me-2 text-primary"></i>Latest News & Blogs</h3>
+                <a href="/blogs" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All</a>
+            </div>
+            
+            {{ if .Data.Blogs }}
+                <div class="row g-4">
+                    {{ range .Data.Blogs }}
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm border-0 border-start border-4 border-primary">
+                            <div class="card-body p-4">
+                                <h4 class="card-title fw-bold mb-2">
+                                    <a href="/blogs/{{ .Slug }}" class="text-decoration-none text-body">{{ .Title }}</a>
+                                </h4>
+                                <div class="d-flex align-items-center text-muted small mt-3">
+                                    <div class="avatar-circle me-2 bg-secondary text-white d-flex justify-content-center align-items-center rounded-circle text-uppercase" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                                        {{ slice .AuthorUsername 0 1 }}
+                                    </div>
+                                    <span class="fw-semibold me-3">{{ .AuthorUsername }}</span>
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    <span>{{ .CreatedAt.Time.Format "Jan 02, 2006" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{ end }}
+                </div>
+            {{ else }}
+                <div class="card shadow-sm border-0 bg-transparent text-center py-5">
                     <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="/blogs/{{ .Slug }}" class="text-decoration-none text-reset">{{ .Title }}</a>
-                        </h5>
-                        <h6 class="card-subtitle mb-2 text-muted small">
-                            By {{ .AuthorUsername }} on {{ .CreatedAt.Time.Format "Jan 02, 2006" }}
-                        </h6>
+                        <i class="bi bi-journal-text fs-1 text-muted mb-3 d-block"></i>
+                        <p class="text-muted fs-5 mb-0">No blogs published yet.</p>
                     </div>
                 </div>
-            </div>
             {{ end }}
         </div>
-    {{ else }}
-        <div class="alert alert-info">No blogs published yet.</div>
-    {{ end }}
+        
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- Features Widget -->
+            <div class="card shadow-sm border-0 mb-4 bg-transparent border">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Platform Features</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li class="d-flex mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Lightning Fast Judge</h6>
+                                <p class="text-muted small mb-0">Sub-millisecond latency for code compilation and execution.</p>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Monaco Editor</h6>
+                                <p class="text-muted small mb-0">Built-in professional code editor with syntax highlighting.</p>
+                            </div>
+                        </li>
+                        <li class="d-flex mb-0">
+                            <i class="bi bi-check-circle-fill text-success fs-5 me-3"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Real-time Feedback</h6>
+                                <p class="text-muted small mb-0">Get test case results instantly with timeline grid.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="card shadow-sm border-0 bg-primary text-white" style="background: linear-gradient(135deg, var(--btn-primary-bg), #0056b3);">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-rocket-takeoff fs-1 d-block mb-3"></i>
+                    <h5 class="fw-bold mb-3 text-white">Ready to challenge yourself?</h5>
+                    <a href="/users" class="btn btn-light text-primary fw-bold rounded-pill w-100 shadow-sm">View Leaderboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {{ end }}

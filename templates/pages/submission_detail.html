@@ -1,50 +1,190 @@
 {{ define "page" }}
-<div class="container">
-    <h2>Submission #{{ .Data.Submission.ID }}</h2>
-    <div class="card">
-        <p><strong>Status:</strong> {{ .Data.Submission.Status }}</p>
-        <p><strong>Verdict:</strong> {{ if .Data.Submission.Verdict }}{{ .Data.Submission.Verdict }}{{ else }}Pending{{ end }}</p>
-        <p><strong>Language:</strong> {{ .Data.Submission.Language }}</p>
-        <p><strong>Submitted At:</strong> {{ .Data.Submission.SubmittedAt.Time.Format "2006-01-02 15:04:05" }}</p>
-        {{ if .Data.Submission.CompileOutput }}
-        <h4>Compile Output:</h4>
-        <pre>{{ .Data.Submission.CompileOutput }}</pre>
-        {{ end }}
+<div class="container pb-5">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h2>Submission <span class="text-muted">#{{ .Data.Submission.ID }}</span></h2>
+        <div>
+            <a href="/problems/{{ .Data.ProblemID }}" class="btn btn-outline-primary me-2"><i class="bi bi-puzzle me-1"></i>Problem</a>
+            <a href="/submissions?problem={{ .Data.ProblemID }}" class="btn btn-outline-secondary"><i class="bi bi-list-ul me-1"></i>All Submissions</a>
+        </div>
     </div>
 
-    {{ if .Data.TestResults }}
-    <h3>Test Cases</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Test #</th>
-                <th>Verdict</th>
-                <th>Time (ms)</th>
-                <th>Memory (KB)</th>
-                <th>VSZ (KB)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{ range .Data.TestResults }}
-            <tr>
-                <td>{{ .TestIndex }}</td>
-                <td>{{ .Verdict }}</td>
-                <td>{{ .TimeMs }}</td>
-                <td>{{ .MemoryKb }}</td>
-                <td>{{ .VszKb }}</td>
-            </tr>
-            {{ end }}
-        </tbody>
-    </table>
+    <!-- Verdict Card -->
+    <div class="card shadow-sm border-0 mb-4 {{ if eq .Data.Submission.Verdict "AC" }}border-success{{ else if or (eq .Data.Submission.Verdict "WA") (eq .Data.Submission.Verdict "RE") }}border-danger{{ else if or (eq .Data.Submission.Verdict "TLE") (eq .Data.Submission.Verdict "MLE") }}border-warning{{ end }}" style="border-left: 4px solid !important;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <h5 class="text-muted mb-1">Verdict</h5>
+                    {{ if .Data.Submission.Verdict }}
+                        {{ if eq .Data.Submission.Verdict "AC" }}
+                            <h2 class="text-success mb-0 fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Accepted</h2>
+                        {{ else if eq .Data.Submission.Verdict "WA" }}
+                            <h2 class="text-danger mb-0 fw-bold"><i class="bi bi-x-circle-fill me-2"></i>Wrong Answer</h2>
+                        {{ else if eq .Data.Submission.Verdict "TLE" }}
+                            <h2 class="text-warning mb-0 fw-bold"><i class="bi bi-clock-fill me-2"></i>Time Limit Exceeded</h2>
+                        {{ else if eq .Data.Submission.Verdict "MLE" }}
+                            <h2 class="text-warning mb-0 fw-bold"><i class="bi bi-memory me-2"></i>Memory Limit Exceeded</h2>
+                        {{ else if eq .Data.Submission.Verdict "CE" }}
+                            <h2 class="text-secondary mb-0 fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Compile Error</h2>
+                        {{ else }}
+                            <h2 class="text-info mb-0 fw-bold">{{ .Data.Submission.Verdict }}</h2>
+                        {{ end }}
+                    {{ else }}
+                        <h2 class="text-muted mb-0 fw-bold"><span class="spinner-border text-primary me-2" role="status"></span>{{ .Data.Submission.Status }}</h2>
+                    {{ end }}
+                </div>
+                <div class="col-md-6">
+                    <div class="row text-center text-md-end">
+                        <div class="col-6 col-md-4 mb-2 mb-md-0">
+                            <span class="text-muted d-block small">Language</span>
+                            <span class="badge bg-secondary fs-6">{{ .Data.Submission.Language }}</span>
+                        </div>
+                        <div class="col-6 col-md-4 mb-2 mb-md-0">
+                            <span class="text-muted d-block small">Time</span>
+                            <span class="fs-5 fw-semibold">{{ .Data.Submission.TimeMs }} <small class="text-muted">ms</small></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <span class="text-muted d-block small">Memory</span>
+                            <span class="fs-5 fw-semibold">{{ .Data.Submission.MemoryKb }} <small class="text-muted">KB</small></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 pt-3 border-top text-muted small d-flex justify-content-between">
+                <span><i class="bi bi-person me-1"></i>User ID: <strong>{{ .Data.Submission.UserID }}</strong></span>
+                <span><i class="bi bi-calendar3 me-1"></i>{{ .Data.Submission.SubmittedAt.Time.Format "Jan 02, 2006 15:04:05" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compile Error Section -->
+    {{ if .Data.Submission.CompileOutput }}
+    <div class="card shadow-sm border-0 mb-4 border-danger" style="border-left: 4px solid !important;">
+        <div class="card-header bg-transparent text-danger fw-bold border-bottom-0 pt-3">
+            <i class="bi bi-bug-fill me-1"></i> Compile Output
+        </div>
+        <div class="card-body pt-0">
+            <pre class="bg-dark text-light p-3 rounded mb-0" style="font-size: 0.85rem;"><code>{{ .Data.Submission.CompileOutput }}</code></pre>
+        </div>
+    </div>
     {{ end }}
 
-    <h3>Source Code</h3>
-    <div class="card">
-        {{ if .Data.CanViewSource }}
-        <pre><code>{{ .Data.Submission.SourceCode }}</code></pre>
-        {{ else }}
-        <p>Bạn không có quyền xem mã nguồn của bài nộp này.</p>
-        {{ end }}
+    <!-- Test Cases Grid -->
+    {{ if .Data.TestResults }}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-transparent fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-check me-1"></i> Test Cases ({{ len .Data.TestResults }})</span>
+            <span class="badge bg-primary rounded-pill">{{ .Data.Submission.Score }} / 100</span>
+        </div>
+        <div class="card-body">
+            <div class="test-grid mb-3">
+                {{ range .Data.TestResults }}
+                    <div class="test-case-box {{ if eq .Verdict "AC" }}ac{{ else if eq .Verdict "WA" }}wa{{ else if eq .Verdict "TLE" }}tle{{ else if eq .Verdict "MLE" }}mle{{ else if eq .Verdict "CE" }}ce{{ else if eq .Verdict "OLE" }}ole{{ else }}other{{ end }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Test {{ .TestIndex }}: {{ .Verdict }} ({{ .TimeMs }}ms, {{ .MemoryKb }}KB)">
+                        {{ .TestIndex }}
+                    </div>
+                {{ end }}
+            </div>
+            
+            <div class="table-responsive mt-4">
+                <table class="table table-sm table-hover align-middle" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 80px;">Test #</th>
+                            <th>Verdict</th>
+                            <th class="text-end">Time</th>
+                            <th class="text-end">Memory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Data.TestResults }}
+                        <tr>
+                            <td class="text-center fw-bold text-muted">{{ .TestIndex }}</td>
+                            <td>
+                                {{ if eq .Verdict "AC" }}
+                                <span class="badge verdict-ac">Accepted</span>
+                                {{ else if eq .Verdict "WA" }}
+                                <span class="badge verdict-wa">Wrong Answer</span>
+                                {{ else if eq .Verdict "TLE" }}
+                                <span class="badge verdict-tle">Time Limit</span>
+                                {{ else if eq .Verdict "MLE" }}
+                                <span class="badge verdict-mle">Memory Limit</span>
+                                {{ else }}
+                                <span class="badge bg-secondary">{{ .Verdict }}</span>
+                                {{ end }}
+                            </td>
+                            <td class="text-end font-monospace">{{ .TimeMs }} ms</td>
+                            <td class="text-end font-monospace">{{ .MemoryKb }} KB</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Source Code Section -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-transparent fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-file-earmark-code me-1"></i> Source Code</span>
+            {{ if .Data.CanViewSource }}
+            <button class="btn btn-sm btn-outline-secondary copy-btn" onclick="copySource()"><i class="bi bi-clipboard me-1"></i>Copy</button>
+            {{ end }}
+        </div>
+        <div class="card-body p-0">
+            {{ if .Data.CanViewSource }}
+            <!-- Hidden textarea for raw source code -->
+            <textarea id="raw-source-code" style="display: none;">{{ .Data.Submission.SourceCode }}</textarea>
+            <!-- Monaco Read-only Container -->
+            <div id="monaco-readonly-container" style="height: 500px; border-radius: 0 0 12px 12px; overflow: hidden;"></div>
+            {{ else }}
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-lock-fill fs-1 d-block mb-3"></i>
+                <h5>Source Code is Private</h5>
+                <p>Bạn không có quyền xem mã nguồn của bài nộp này.</p>
+            </div>
+            {{ end }}
+        </div>
     </div>
 </div>
+{{ end }}
+
+{{ define "scripts" }}
+{{ if .Data.CanViewSource }}
+<!-- Load Monaco Editor via RequireJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
+<script src="/static/js/editor.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Initialize read-only editor
+        initReadOnlyEditor('monaco-readonly-container', 'raw-source-code', '{{ .Data.Submission.Language }}');
+    });
+
+    function copySource() {
+        const sourceCode = document.getElementById('raw-source-code').value;
+        navigator.clipboard.writeText(sourceCode).then(() => {
+            const btn = document.querySelector('.copy-btn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-outline-secondary');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    }
+</script>
+{{ end }}
+
+<!-- Enable Tooltips -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {{ end }}
