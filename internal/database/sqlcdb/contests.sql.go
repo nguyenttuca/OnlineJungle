@@ -362,6 +362,39 @@ func (q *Queries) RemoveContestProblem(ctx context.Context, arg RemoveContestPro
 	return err
 }
 
+const searchContests = `-- name: SearchContests :many
+SELECT id, title, start_at, end_at, created_at, ranking_type FROM contests
+WHERE title ILIKE '%' || $1::text || '%'
+ORDER BY start_at DESC
+`
+
+func (q *Queries) SearchContests(ctx context.Context, q_ string) ([]Contest, error) {
+	rows, err := q.db.Query(ctx, searchContests, q_)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Contest{}
+	for rows.Next() {
+		var i Contest
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.StartAt,
+			&i.EndAt,
+			&i.CreatedAt,
+			&i.RankingType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateContest = `-- name: UpdateContest :exec
 UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5 WHERE id = $1
 `

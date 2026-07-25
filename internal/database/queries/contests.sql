@@ -4,6 +4,11 @@ SELECT * FROM contests WHERE id = $1;
 -- name: ListContests :many
 SELECT * FROM contests ORDER BY start_at DESC;
 
+-- name: SearchContests :many
+SELECT * FROM contests
+WHERE title ILIKE '%' || sqlc.arg('q')::text || '%'
+ORDER BY start_at DESC;
+
 -- name: CreateContest :one
 INSERT INTO contests (title, start_at, end_at, ranking_type) VALUES ($1, $2, $3, $4) RETURNING *;
 

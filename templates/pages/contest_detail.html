@@ -1,94 +1,133 @@
 {{ define "page" }}
-<div class="container">
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="card-title mb-0">{{ .Data.Contest.Title }}</h2>
-                {{ if .User }}
-                    {{ if eq .User.Role "admin" }}
-                    <a href="/admin/contests/{{ .Data.Contest.ID }}/edit" class="btn btn-outline-warning btn-sm"><i class="bi bi-pencil"></i> Edit Contest</a>
+<div class="container pb-5">
+    <!-- Contest Header -->
+    <div class="card shadow-sm border-0 mb-4 bg-primary text-white" style="background: linear-gradient(135deg, var(--btn-primary-bg), #0056b3);">
+        <div class="card-body p-5 position-relative overflow-hidden">
+            <div class="position-relative z-1">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="card-title mb-0 fw-bold">{{ .Data.Contest.Title }}</h2>
+                    {{ if .User }}
+                        {{ if eq .User.Role "admin" }}
+                        <a href="/admin/contests/{{ .Data.Contest.ID }}/edit" class="btn btn-light btn-sm rounded-pill fw-bold text-primary shadow-sm"><i class="bi bi-pencil me-1"></i> Edit Contest</a>
+                        {{ end }}
                     {{ end }}
-                {{ end }}
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between text-center">
-                <div>
-                    <h5 class="mb-0 text-success">Start Time</h5>
-                    <p class="text-muted mb-0">{{ .Data.Contest.StartAt.Time.Format "Jan 02, 2006 15:04:05" }}</p>
                 </div>
-                <div>
-                    <h5 class="mb-0 text-danger">End Time</h5>
-                    <p class="text-muted mb-0">{{ .Data.Contest.EndAt.Time.Format "Jan 02, 2006 15:04:05" }}</p>
+                
+                <div class="d-flex gap-4 mt-4">
+                    <div class="d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-3 shadow-sm border border-light border-opacity-25">
+                        <i class="bi bi-play-circle fs-3 me-3 text-white opacity-75"></i>
+                        <div>
+                            <small class="text-uppercase fw-semibold opacity-75 d-block" style="font-size: 0.7rem; letter-spacing: 1px;">Start Time</small>
+                            <span class="fw-bold">{{ .Data.Contest.StartAt.Time.Format "Jan 02, 2006 15:04" }}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-3 shadow-sm border border-light border-opacity-25">
+                        <i class="bi bi-stop-circle fs-3 me-3 text-white opacity-75"></i>
+                        <div>
+                            <small class="text-uppercase fw-semibold opacity-75 d-block" style="font-size: 0.7rem; letter-spacing: 1px;">End Time</small>
+                            <span class="fw-bold">{{ .Data.Contest.EndAt.Time.Format "Jan 02, 2006 15:04" }}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center bg-white bg-opacity-10 px-3 py-2 rounded-3 shadow-sm border border-light border-opacity-25 ms-auto">
+                        <i class="bi bi-bar-chart-fill fs-3 me-3 text-white opacity-75"></i>
+                        <div>
+                            <small class="text-uppercase fw-semibold opacity-75 d-block" style="font-size: 0.7rem; letter-spacing: 1px;">Format</small>
+                            <span class="fw-bold">{{ .Data.Contest.RankingType }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <i class="bi bi-trophy-fill position-absolute text-white opacity-10" style="font-size: 15rem; top: -30px; right: -20px; transform: rotate(-15deg);"></i>
         </div>
     </div>
     
-    <h4>Problems</h4>
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th width="10%">Label</th>
-                        <th>Problem Title</th>
-                        <th width="15%" class="text-center">Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ range .Data.Problems }}
-                    <tr>
-                        <td><strong>{{ .Label }}</strong></td>
-                        <td><a href="/contests/{{ $.Data.Contest.ID }}/problems/{{ .Slug }}" style="text-decoration: none;">{{ .Title }}</a></td>
-                        <td class="text-center text-primary" style="font-weight: bold;">{{ .Points }}</td>
-                    </tr>
-                    {{ else }}
-                    <tr>
-                        <td colspan="3" class="text-center text-muted">No problems assigned yet.</td>
-                    </tr>
-                    {{ end }}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <h4>Live Standings</h4>
-    <div class="card shadow-sm border-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th width="10%">Rank</th>
-                        <th>User</th>
-                        {{ if eq .Data.Contest.RankingType "ICPC" }}
-                        <th width="15%" class="text-center">Solved</th>
-                        <th width="15%" class="text-center">Penalty (min)</th>
-                        {{ else }}
-                        <th width="15%" class="text-center">Score</th>
-                        {{ end }}
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ if .Data.Standings }}
-                        {{ range $index, $standing := .Data.Standings }}
-                        <tr>
-                            <td><strong>{{ add $index 1 }}</strong></td>
-                            <td><a href="/users/{{ $standing.Username }}" style="text-decoration: none;">{{ $standing.Username }}</a></td>
-                            {{ if eq $.Data.Contest.RankingType "ICPC" }}
-                            <td class="text-center text-success" style="font-weight: bold;">{{ $standing.SolvedCount }}</td>
-                            <td class="text-center text-danger">{{ $standing.TotalPenaltyMinutes }}</td>
+    <div class="row g-4">
+        <!-- Problems Column -->
+        <div class="col-lg-7">
+            <h4 class="fw-bold mb-3"><i class="bi bi-puzzle me-2 text-primary"></i>Problems</h4>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4" width="15%">Label</th>
+                                <th>Problem Title</th>
+                                <th width="20%" class="text-center pe-4">Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Data.Problems }}
+                            <tr>
+                                <td class="ps-4"><span class="badge bg-secondary opacity-75 fs-6">{{ .Label }}</span></td>
+                                <td><a href="/contests/{{ $.Data.Contest.ID }}/problems/{{ .Slug }}" class="text-decoration-none fw-semibold text-body d-block py-2">{{ .Title }}</a></td>
+                                <td class="text-center pe-4"><span class="badge bg-primary rounded-pill px-3 py-2">{{ .Points }}</span></td>
+                            </tr>
                             {{ else }}
-                            <td class="text-center text-success" style="font-weight: bold;">{{ $standing.TotalScore }}</td>
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    No problems assigned yet.
+                                </td>
+                            </tr>
                             {{ end }}
-                        </tr>
-                        {{ end }}
-                    {{ else }}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted">Chưa có ai nộp bài.</td>
-                        </tr>
-                    {{ end }}
-                </tbody>
-            </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Standings Column -->
+        <div class="col-lg-5">
+            <h4 class="fw-bold mb-3"><i class="bi bi-bar-chart-line me-2 text-success"></i>Live Standings</h4>
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.95rem;">
+                        <thead>
+                            <tr>
+                                <th class="ps-3" width="15%">Rank</th>
+                                <th>User</th>
+                                {{ if eq .Data.Contest.RankingType "ICPC" }}
+                                <th class="text-center" width="20%">Solved</th>
+                                <th class="text-center pe-3" width="25%">Penalty (m)</th>
+                                {{ else }}
+                                <th class="text-end pe-4" width="30%">Score</th>
+                                {{ end }}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ if .Data.Standings }}
+                                {{ range $index, $standing := .Data.Standings }}
+                                <tr {{ if lt $index 3 }}class="bg-light" style="--bs-bg-opacity: .03;"{{ end }}>
+                                    <td class="ps-3">
+                                        <span class="fw-bold {{ if eq $index 0 }}text-warning fs-5{{ else if eq $index 1 }}text-secondary fs-5{{ else if eq $index 2 }}text-orange fs-5{{ else }}text-muted{{ end }}" {{ if eq $index 2 }}style="color: #cd7f32 !important;"{{ end }}>
+                                            #{{ add $index 1 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="/users/{{ $standing.Username }}" class="text-decoration-none fw-semibold text-body">
+                                            {{ $standing.Username }}
+                                        </a>
+                                    </td>
+                                    {{ if eq $.Data.Contest.RankingType "ICPC" }}
+                                    <td class="text-center"><span class="text-success fw-bold">{{ $standing.SolvedCount }}</span></td>
+                                    <td class="text-center pe-3 text-muted font-monospace">{{ $standing.TotalPenaltyMinutes }}</td>
+                                    {{ else }}
+                                    <td class="text-end pe-4"><span class="text-success fw-bold">{{ $standing.TotalScore }}</span></td>
+                                    {{ end }}
+                                </tr>
+                                {{ end }}
+                            {{ else }}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5 text-muted">
+                                        <i class="bi bi-emoji-frown fs-1 d-block mb-3 opacity-50"></i>
+                                        Chưa có ai nộp bài.
+                                    </td>
+                                </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

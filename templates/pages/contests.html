@@ -1,30 +1,78 @@
 {{ define "page" }}
-<div class="container">
-    <h2>Contests</h2>
-    <div class="row">
+<div class="container pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h2><i class="bi bi-trophy me-2 text-warning"></i>Contests</h2>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="filter-bar mb-4">
+        <form method="GET" action="/contests" class="row g-3 align-items-end">
+            <div class="col-md-10">
+                <label for="q" class="form-label text-muted small mb-1">Search Contests</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="q" name="q" value="{{ .Data.Q }}" placeholder="Search by contest name...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100">
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-4">
         {{ range .Data.Contests }}
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100 border-0">
-                <div class="card-body d-flex flex-column">
-                    <h4 class="card-title"><a href="/contests/{{ .ID }}" style="text-decoration: none; color: var(--primary-color);">{{ .Title }}</a></h4>
-                    <p class="card-text mb-1"><i class="bi bi-play-circle text-success"></i> Start: {{ .StartAt.Time.Format "Jan 02, 2006 15:04" }}</p>
-                    <p class="card-text"><i class="bi bi-stop-circle text-danger"></i> End: {{ .EndAt.Time.Format "Jan 02, 2006 15:04" }}</p>
-                    <div class="mt-auto d-flex justify-content-between">
-                        <a href="/contests/{{ .ID }}" class="btn btn-outline-primary btn-sm flex-grow-1" style="margin-right: 5px;">View Details</a>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0 contest-card position-relative overflow-hidden">
+                <div class="card-body d-flex flex-column p-4">
+                    <h4 class="card-title fw-bold mb-3">
+                        <a href="/contests/{{ .ID }}" class="text-decoration-none text-body stretched-link">{{ .Title }}</a>
+                    </h4>
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border me-2 mb-2"><i class="bi bi-play-circle text-success me-1"></i>{{ .StartAt.Time.Format "Jan 02, 15:04" }}</span>
+                        <span class="badge bg-light text-dark border mb-2"><i class="bi bi-stop-circle text-danger me-1"></i>{{ .EndAt.Time.Format "Jan 02, 15:04" }}</span>
+                    </div>
+                    <div class="mt-auto d-flex justify-content-between align-items-center position-relative z-1">
+                        <a href="/contests/{{ .ID }}" class="btn btn-primary btn-sm px-3 rounded-pill fw-semibold">View Details</a>
                         {{ if $.User }}
                             {{ if eq $.User.Role "admin" }}
-                                <a href="/admin/contests/{{ .ID }}/edit" class="btn btn-outline-warning btn-sm" title="Edit Contest"><i class="bi bi-pencil"></i></a>
+                                <a href="/admin/contests/{{ .ID }}/edit" class="btn btn-light btn-sm rounded-circle shadow-sm" title="Edit Contest" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-pencil text-warning"></i>
+                                </a>
                             {{ end }}
                         {{ end }}
                     </div>
+                </div>
+                <div class="position-absolute opacity-10" style="bottom: -20px; right: -20px; transform: rotate(-15deg);">
+                    <i class="bi bi-trophy-fill text-muted" style="font-size: 8rem;"></i>
                 </div>
             </div>
         </div>
         {{ else }}
         <div class="col-12">
-            <p class="text-muted text-center">No contests available.</p>
+            <div class="card shadow-sm border-0 bg-transparent text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
+                    <p class="text-muted fs-5 mb-0">No contests found.</p>
+                </div>
+            </div>
         </div>
         {{ end }}
     </div>
 </div>
+
+<style>
+.contest-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.contest-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+[data-bs-theme="dark"] .contest-card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4) !important;
+}
+</style>
 {{ end }}

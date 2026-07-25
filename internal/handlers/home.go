@@ -27,10 +27,24 @@ func (env *Env) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 func (env *Env) ContestsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	contests, _ := env.Queries.ListContests(ctx)
+	q := r.URL.Query().Get("q")
+
+	var contests []sqlcdb.Contest
+	var err error
+
+	if q != "" {
+		contests, err = env.Queries.SearchContests(ctx, q)
+	} else {
+		contests, err = env.Queries.ListContests(ctx)
+	}
+
+	if err != nil {
+		contests = []sqlcdb.Contest{}
+	}
 
 	render(w, r, "contests.html", map[string]interface{}{
 		"Contests": contests,
+		"Q":        q,
 	})
 }
 
