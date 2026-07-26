@@ -16,14 +16,27 @@ type TestCase struct {
 }
 
 type JudgeRequest struct {
+	ProblemID         int64      `json:"problem_id"`
+	UpdatedAt         string     `json:"updated_at"`
 	Language          string     `json:"language"`
 	SourceCode        string     `json:"source_code"`
 	TimeLimitMs       int32      `json:"time_limit_ms"`
 	MemoryLimitMb     int32      `json:"memory_limit_mb"`
-	TestCases         []TestCase `json:"test_cases"`
+	TestCases         []TestCase `json:"test_cases,omitempty"`
 	CheckerType       string     `json:"checker_type"`
 	CustomCheckerCode string     `json:"custom_checker_code,omitempty"`
 	RunAllTests       bool       `json:"run_all_tests"`
+}
+
+type SyncTestcasesRequest struct {
+	ProblemID int64      `json:"problem_id"`
+	UpdatedAt string     `json:"updated_at"`
+	TestCases []TestCase `json:"test_cases"`
+}
+
+type SyncResponse struct {
+	Success bool `json:"success"`
+	Count   int  `json:"count"`
 }
 
 type TestResult struct {
@@ -81,6 +94,12 @@ func (c *Client) SubmitJudge(ctx context.Context, req JudgeRequest) (*JudgeRespo
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
+		var errResp struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(bodyBytes, &errResp) == nil && errResp.Error != "" {
+			return nil, fmt.Errorf("%s", errResp.Error) // return specific error like MISSING_TESTCASES
+		}
 		return nil, fmt.Errorf("judge returned non-200 status: %d, body: %s", resp.StatusCode, string(bodyBytes))
 	}
 
@@ -90,4 +109,33 @@ func (c *Client) SubmitJudge(ctx context.Context, req JudgeRequest) (*JudgeRespo
 	}
 
 	return &judgeResp, nil
+}
+
+func (c *Client) SyncTestcases(ctx context.Context, req SyncTestcasesRequest) error {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return fmt.Errorf("failed to marshal sync request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/testcases/sync", bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("failed to create sync request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	if c.APIKey != "" {
+		httpReq.Header.Set("x-api-key", c.APIKey)
+	}
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return fmt.Errorf("failed to send sync request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("sync returned non-200 status: %d, body: %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	return nil
 }

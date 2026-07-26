@@ -2,6 +2,7 @@ package dispatcher
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -139,7 +140,14 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 		customCheckerCode = encodedCode
 	}
 
+	updatedAt := "v_0_0"
+	if len(testCases) > 0 {
+		updatedAt = fmt.Sprintf("v_%d_%d", len(testCases), testCases[len(testCases)-1].ID)
+	}
+
 	req := judgepool.JudgeRequest{
+		ProblemID:         problem.ID,
+		UpdatedAt:         updatedAt,
 		Language:          sub.Language,
 		SourceCode:        sub.SourceCode,
 		TimeLimitMs:       problem.TimeLimitMs,
@@ -147,13 +155,6 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 		CheckerType:       checkerType,
 		CustomCheckerCode: customCheckerCode,
 		RunAllTests:       runAllTests,
-	}
-
-	for _, tc := range testCases {
-		req.TestCases = append(req.TestCases, judgepool.TestCase{
-			Input:          tc.Input,
-			ExpectedOutput: tc.ExpectedOutput,
-		})
 	}
 
 	// 3. Find available judge node and acquire it atomically
@@ -181,7 +182,38 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 
 	// 4. Send to Judge Node
 	client := judgepool.NewClient(node.BaseUrl, node.ApiKeyEncrypted)
+	
+	// Initial attempt
 	resp, err := client.SubmitJudge(d.Ctx, req)
+
+	// If missing testcases, sync and retry
+	if err != nil && err.Error() == "MISSING_TESTCASES" {
+		log.Printf("Judge node %s missing testcases for sub %d, syncing...", node.BaseUrl, sub.ID)
+		syncReq := judgepool.SyncTestcasesRequest{
+			ProblemID: problem.ID,
+			UpdatedAt: updatedAt,
+			TestCases: make([]judgepool.TestCase, 0, len(testCases)),
+		}
+		for _, tc := range testCases {
+			syncReq.TestCases = append(syncReq.TestCases, judgepool.TestCase{
+				Input:          tc.Input,
+				ExpectedOutput: tc.ExpectedOutput,
+			})
+		}
+		
+		errSync := client.SyncTestcases(d.Ctx, syncReq)
+		if errSync != nil {
+			log.Printf("Failed to sync testcases to node %s for sub %d: %v", node.BaseUrl, sub.ID, errSync)
+			d.Queries.UpdateSubmissionFailed(d.Ctx, sqlcdb.UpdateSubmissionFailedParams{
+				ID:            sub.ID,
+				CompileOutput: "Judge Node Sync Error: " + errSync.Error(),
+			})
+			return
+		}
+		
+		// Retry judging after sync
+		resp, err = client.SubmitJudge(d.Ctx, req)
+	}
 
 	if err != nil {
 		log.Printf("Judge request failed for sub %d: %v", sub.ID, err)
