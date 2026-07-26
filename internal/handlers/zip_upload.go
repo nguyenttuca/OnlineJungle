@@ -81,7 +81,8 @@ func (env *Env) HandleZipUpload(ctx context.Context, file io.Reader, size int64,
 		}
 
 		ext := strings.ToLower(filepath.Ext(baseName))
-		nameWithoutExt := strings.TrimSuffix(baseName, filepath.Ext(baseName))
+		// Use full path minus extension as the key to pair inputs and outputs in the same directory
+		nameWithoutExt := strings.TrimSuffix(f.Name, filepath.Ext(f.Name))
 
 		isInput := validInputExts[ext]
 		isOutput := validOutputExts[ext]
