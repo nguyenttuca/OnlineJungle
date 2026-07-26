@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -44,6 +45,11 @@ func (env *Env) SubmissionDetailHandler(w http.ResponseWriter, r *http.Request) 
 
 	testResults, _ := env.Queries.ListTestResultsBySubmission(ctx, id)
 
+	problem, err := env.Queries.GetProblemByID(ctx, submission.ProblemID)
+	if err != nil {
+		log.Printf("Error getting problem for submission: %v", err)
+	}
+
 	user := GetUserFromContext(ctx)
 	canViewSource := false
 	if user != nil && (user.ID == submission.UserID || user.Role == "admin") {
@@ -52,6 +58,7 @@ func (env *Env) SubmissionDetailHandler(w http.ResponseWriter, r *http.Request) 
 
 	render(w, r, "submission_detail.html", map[string]interface{}{
 		"Submission":    submission,
+		"Problem":       problem,
 		"TestResults":   testResults,
 		"CanViewSource": canViewSource,
 	})

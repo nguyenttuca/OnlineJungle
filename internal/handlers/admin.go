@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -17,6 +18,27 @@ import (
 // Admin Dashboard
 func (env *Env) AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	render(w, r, "admin_dashboard.html", nil)
+}
+
+func parseExamplesFromForm(r *http.Request) []byte {
+	inputs := r.Form["example_input[]"]
+	outputs := r.Form["example_output[]"]
+
+	var examples []map[string]string
+	for i := 0; i < len(inputs) && i < len(outputs); i++ {
+		examples = append(examples, map[string]string{
+			"input":  inputs[i],
+			"output": outputs[i],
+		})
+	}
+	if len(examples) == 0 {
+		return []byte("[]")
+	}
+	bytes, err := json.Marshal(examples)
+	if err != nil {
+		return []byte("[]")
+	}
+	return bytes
 }
 
 // Problems
@@ -89,10 +111,10 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		MemoryLimitMb:     int32(memoryLimit),
 		CheckerType:       "diff",
 		Category:          "Uncategorized",
-		InputDesc:         "",
-		OutputDesc:        "",
-		ConstraintsDesc:   "",
-		Examples:          []byte("[]"),
+		InputDesc:         r.FormValue("input_desc"),
+		OutputDesc:        r.FormValue("output_desc"),
+		ConstraintsDesc:   r.FormValue("constraints_desc"),
+		Examples:          parseExamplesFromForm(r),
 		CustomCheckerCode: "",
 		EditorialContent:  r.FormValue("editorial_content"),
 		Tags:              []byte(tags),
@@ -452,10 +474,10 @@ func (env *Env) AdminEditProblemPostHandler(w http.ResponseWriter, r *http.Reque
 		TimeLimitMs:       timeLimitMs,
 		MemoryLimitMb:     memoryLimitMb,
 		StatementMd:       statement,
-		InputDesc:         problem.InputDesc,
-		OutputDesc:        problem.OutputDesc,
-		ConstraintsDesc:   problem.ConstraintsDesc,
-		Examples:          problem.Examples,
+		InputDesc:         r.FormValue("input_desc"),
+		OutputDesc:        r.FormValue("output_desc"),
+		ConstraintsDesc:   r.FormValue("constraints_desc"),
+		Examples:          parseExamplesFromForm(r),
 		CheckerType:       r.FormValue("checker_type"),
 		CustomCheckerCode: r.FormValue("custom_checker_code"),
 		EditorialContent:  r.FormValue("editorial_content"),

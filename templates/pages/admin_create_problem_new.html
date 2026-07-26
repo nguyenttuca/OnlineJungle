@@ -86,6 +86,13 @@
                             <label class="form-label fw-bold">Giới hạn & Ràng buộc (Constraints)</label>
                             <textarea name="constraints_desc" class="form-control font-monospace" rows="3" placeholder="$1 \le N \le 10^5$"></textarea>
                         </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold"><i class="bi bi-table me-1"></i>Ví dụ (Examples)</label>
+                            <div id="examplesContainer">
+                                <!-- Example items will be appended here -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 fw-bold" id="addExampleBtn"><i class="bi bi-plus-circle me-1"></i>Thêm Ví Dụ</button>
+                        </div>
                         <div>
                             <label class="form-label fw-bold text-success"><i class="bi bi-journal-text me-1"></i>Hướng dẫn giải (Editorial)</label>
                             <textarea name="editorial_content" class="form-control font-monospace border-success" rows="5" placeholder="Nội dung hướng dẫn giải, thuật toán đề xuất... (Markdown)"></textarea>
@@ -226,6 +233,37 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             return false;
         }
+    });
+
+    // Dynamic Examples UI
+    const examplesContainer = document.getElementById('examplesContainer');
+    const addExampleBtn = document.getElementById('addExampleBtn');
+
+    function createExampleElement() {
+        const div = document.createElement('div');
+        div.className = 'example-item mb-3 p-3 border rounded bg-white shadow-sm';
+        div.innerHTML = `
+            <div class="d-flex justify-content-between mb-2">
+                <span class="fw-bold text-secondary small"><i class="bi bi-file-earmark-code me-1"></i>Test ví dụ</span>
+                <button type="button" class="btn-close btn-sm remove-example-btn" aria-label="Close"></button>
+            </div>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted mb-1">Input</label>
+                    <textarea name="example_input[]" class="form-control font-monospace" style="white-space: pre; overflow-wrap: normal; overflow-x: auto;" rows="3" required></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold text-muted mb-1">Output</label>
+                    <textarea name="example_output[]" class="form-control font-monospace" style="white-space: pre; overflow-wrap: normal; overflow-x: auto;" rows="3" required></textarea>
+                </div>
+            </div>
+        `;
+        div.querySelector('.remove-example-btn').addEventListener('click', () => div.remove());
+        return div;
+    }
+
+    addExampleBtn.addEventListener('click', () => {
+        examplesContainer.appendChild(createExampleElement());
     });
 });
 </script>

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -77,8 +78,14 @@ func (env *Env) ProblemDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var parsedExamples []map[string]string
+	if len(problem.Examples) > 0 && string(problem.Examples) != "null" {
+		json.Unmarshal(problem.Examples, &parsedExamples)
+	}
+
 	render(w, r, "problem_detail.html", map[string]interface{}{
 		"Problem": problem,
+		"ParsedExamples": parsedExamples,
 	})
 }
 
