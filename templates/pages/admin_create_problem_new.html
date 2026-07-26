@@ -35,13 +35,28 @@
                                 <label class="form-label fw-bold">Tên bài tập <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" required placeholder="A+B Problem" value="{{ .Data.Title }}">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">Danh mục (Category)</label>
                                 <input type="text" name="category" class="form-control" placeholder="Basic" value="{{ .Data.Category }}">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">Nguồn tham khảo (Mirror from)</label>
                                 <input type="text" name="mirror_from" class="form-control" placeholder="Codeforces, VNOI...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Gán vào Lớp học (Tùy chọn)</label>
+                                <select name="class_id" class="form-select">
+                                    <option value="">-- Không gán --</option>
+                                    {{ range .Data.Classes }}
+                                    <option value="{{ .ID }}">{{ .Name }}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="isHidden" name="is_hidden">
+                                    <label class="form-check-label fw-bold text-danger" for="isHidden">Bài tập ẩn (Chỉ hiện trong Lớp học)</label>
+                                </div>
                             </div>
                         </div>
                     </div>

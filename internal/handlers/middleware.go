@@ -75,3 +75,32 @@ func RequireAdmin(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+// RequireTeacherOrAdmin is a middleware that ensures the user is an admin OR a teacher in at least one class.
+func (env *Env) RequireTeacherOrAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := GetUserFromContext(r.Context())
+		if user == nil {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		if user.Role == "admin" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Check if user is a teacher in any class
+		classes, err := env.Queries.GetUserClasses(r.Context(), user.ID)
+		if err == nil {
+			for _, class := range classes {
+				if class.Role == "teacher" {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+		}
+
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	})
+}

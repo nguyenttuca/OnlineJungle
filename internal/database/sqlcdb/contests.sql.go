@@ -164,7 +164,7 @@ func (q *Queries) CalculateContestStandingsIOI(ctx context.Context, contestID in
 }
 
 const createContest = `-- name: CreateContest :one
-INSERT INTO contests (title, start_at, end_at, ranking_type) VALUES ($1, $2, $3, $4) RETURNING id, title, start_at, end_at, created_at, ranking_type
+INSERT INTO contests (title, start_at, end_at, ranking_type, is_hidden) VALUES ($1, $2, $3, $4, $5) RETURNING id, title, start_at, end_at, created_at, ranking_type, is_hidden
 `
 
 type CreateContestParams struct {
@@ -172,6 +172,7 @@ type CreateContestParams struct {
 	StartAt     pgtype.Timestamptz `json:"start_at"`
 	EndAt       pgtype.Timestamptz `json:"end_at"`
 	RankingType string             `json:"ranking_type"`
+	IsHidden    bool               `json:"is_hidden"`
 }
 
 func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (Contest, error) {
@@ -180,6 +181,7 @@ func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (C
 		arg.StartAt,
 		arg.EndAt,
 		arg.RankingType,
+		arg.IsHidden,
 	)
 	var i Contest
 	err := row.Scan(
@@ -189,12 +191,13 @@ func (q *Queries) CreateContest(ctx context.Context, arg CreateContestParams) (C
 		&i.EndAt,
 		&i.CreatedAt,
 		&i.RankingType,
+		&i.IsHidden,
 	)
 	return i, err
 }
 
 const getContestByID = `-- name: GetContestByID :one
-SELECT id, title, start_at, end_at, created_at, ranking_type FROM contests WHERE id = $1
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests WHERE id = $1
 `
 
 func (q *Queries) GetContestByID(ctx context.Context, id int64) (Contest, error) {
@@ -207,12 +210,13 @@ func (q *Queries) GetContestByID(ctx context.Context, id int64) (Contest, error)
 		&i.EndAt,
 		&i.CreatedAt,
 		&i.RankingType,
+		&i.IsHidden,
 	)
 	return i, err
 }
 
 const getContestProblem = `-- name: GetContestProblem :one
-SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from
+SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from, p.is_hidden
 FROM problems p
 JOIN contest_problems cp ON cp.problem_id = p.id
 WHERE cp.contest_id = $1 AND p.slug = $2
@@ -245,12 +249,13 @@ func (q *Queries) GetContestProblem(ctx context.Context, arg GetContestProblemPa
 		&i.Tags,
 		&i.TestcaseVisibility,
 		&i.MirrorFrom,
+		&i.IsHidden,
 	)
 	return i, err
 }
 
 const listContestProblems = `-- name: ListContestProblems :many
-SELECT cp.label, cp.points, p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from FROM contest_problems cp JOIN problems p ON p.id = cp.problem_id WHERE cp.contest_id = $1 ORDER BY cp.label
+SELECT cp.label, cp.points, p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from, p.is_hidden FROM contest_problems cp JOIN problems p ON p.id = cp.problem_id WHERE cp.contest_id = $1 ORDER BY cp.label
 `
 
 type ListContestProblemsRow struct {
@@ -274,6 +279,7 @@ type ListContestProblemsRow struct {
 	Tags               []byte             `json:"tags"`
 	TestcaseVisibility string             `json:"testcase_visibility"`
 	MirrorFrom         string             `json:"mirror_from"`
+	IsHidden           bool               `json:"is_hidden"`
 }
 
 func (q *Queries) ListContestProblems(ctx context.Context, contestID int64) ([]ListContestProblemsRow, error) {
@@ -306,6 +312,7 @@ func (q *Queries) ListContestProblems(ctx context.Context, contestID int64) ([]L
 			&i.Tags,
 			&i.TestcaseVisibility,
 			&i.MirrorFrom,
+			&i.IsHidden,
 		); err != nil {
 			return nil, err
 		}
@@ -318,7 +325,7 @@ func (q *Queries) ListContestProblems(ctx context.Context, contestID int64) ([]L
 }
 
 const listContests = `-- name: ListContests :many
-SELECT id, title, start_at, end_at, created_at, ranking_type FROM contests ORDER BY start_at DESC
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests ORDER BY start_at DESC
 `
 
 func (q *Queries) ListContests(ctx context.Context) ([]Contest, error) {
@@ -337,6 +344,7 @@ func (q *Queries) ListContests(ctx context.Context) ([]Contest, error) {
 			&i.EndAt,
 			&i.CreatedAt,
 			&i.RankingType,
+			&i.IsHidden,
 		); err != nil {
 			return nil, err
 		}
@@ -363,13 +371,19 @@ func (q *Queries) RemoveContestProblem(ctx context.Context, arg RemoveContestPro
 }
 
 const searchContests = `-- name: SearchContests :many
-SELECT id, title, start_at, end_at, created_at, ranking_type FROM contests
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests
 WHERE title ILIKE '%' || $1::text || '%'
+  AND ($2::boolean = true OR is_hidden = false)
 ORDER BY start_at DESC
 `
 
-func (q *Queries) SearchContests(ctx context.Context, q_ string) ([]Contest, error) {
-	rows, err := q.db.Query(ctx, searchContests, q_)
+type SearchContestsParams struct {
+	Q             string `json:"q"`
+	IncludeHidden bool   `json:"include_hidden"`
+}
+
+func (q *Queries) SearchContests(ctx context.Context, arg SearchContestsParams) ([]Contest, error) {
+	rows, err := q.db.Query(ctx, searchContests, arg.Q, arg.IncludeHidden)
 	if err != nil {
 		return nil, err
 	}
@@ -384,6 +398,7 @@ func (q *Queries) SearchContests(ctx context.Context, q_ string) ([]Contest, err
 			&i.EndAt,
 			&i.CreatedAt,
 			&i.RankingType,
+			&i.IsHidden,
 		); err != nil {
 			return nil, err
 		}
@@ -396,7 +411,7 @@ func (q *Queries) SearchContests(ctx context.Context, q_ string) ([]Contest, err
 }
 
 const updateContest = `-- name: UpdateContest :exec
-UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5 WHERE id = $1
+UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5, is_hidden = $6 WHERE id = $1
 `
 
 type UpdateContestParams struct {
@@ -405,6 +420,7 @@ type UpdateContestParams struct {
 	StartAt     pgtype.Timestamptz `json:"start_at"`
 	EndAt       pgtype.Timestamptz `json:"end_at"`
 	RankingType string             `json:"ranking_type"`
+	IsHidden    bool               `json:"is_hidden"`
 }
 
 func (q *Queries) UpdateContest(ctx context.Context, arg UpdateContestParams) error {
@@ -414,6 +430,7 @@ func (q *Queries) UpdateContest(ctx context.Context, arg UpdateContestParams) er
 		arg.StartAt,
 		arg.EndAt,
 		arg.RankingType,
+		arg.IsHidden,
 	)
 	return err
 }

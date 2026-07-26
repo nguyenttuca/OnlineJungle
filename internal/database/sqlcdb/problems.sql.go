@@ -12,9 +12,9 @@ import (
 )
 
 const createProblem = `-- name: CreateProblem :one
-INSERT INTO problems (slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, editorial_content, tags, testcase_visibility, mirror_from)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-RETURNING id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from
+INSERT INTO problems (slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, editorial_content, tags, testcase_visibility, mirror_from, is_hidden)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+RETURNING id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from, is_hidden
 `
 
 type CreateProblemParams struct {
@@ -34,6 +34,7 @@ type CreateProblemParams struct {
 	Tags               []byte `json:"tags"`
 	TestcaseVisibility string `json:"testcase_visibility"`
 	MirrorFrom         string `json:"mirror_from"`
+	IsHidden           bool   `json:"is_hidden"`
 }
 
 func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (Problem, error) {
@@ -54,6 +55,7 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (P
 		arg.Tags,
 		arg.TestcaseVisibility,
 		arg.MirrorFrom,
+		arg.IsHidden,
 	)
 	var i Problem
 	err := row.Scan(
@@ -75,6 +77,7 @@ func (q *Queries) CreateProblem(ctx context.Context, arg CreateProblemParams) (P
 		&i.Tags,
 		&i.TestcaseVisibility,
 		&i.MirrorFrom,
+		&i.IsHidden,
 	)
 	return i, err
 }
@@ -89,7 +92,7 @@ func (q *Queries) DeleteProblem(ctx context.Context, id int64) error {
 }
 
 const getProblemByID = `-- name: GetProblemByID :one
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE id = $1
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from, is_hidden FROM problems WHERE id = $1
 `
 
 func (q *Queries) GetProblemByID(ctx context.Context, id int64) (Problem, error) {
@@ -114,12 +117,13 @@ func (q *Queries) GetProblemByID(ctx context.Context, id int64) (Problem, error)
 		&i.Tags,
 		&i.TestcaseVisibility,
 		&i.MirrorFrom,
+		&i.IsHidden,
 	)
 	return i, err
 }
 
 const getProblemBySlug = `-- name: GetProblemBySlug :one
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE slug = $1
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from, is_hidden FROM problems WHERE slug = $1
 `
 
 func (q *Queries) GetProblemBySlug(ctx context.Context, slug string) (Problem, error) {
@@ -144,6 +148,7 @@ func (q *Queries) GetProblemBySlug(ctx context.Context, slug string) (Problem, e
 		&i.Tags,
 		&i.TestcaseVisibility,
 		&i.MirrorFrom,
+		&i.IsHidden,
 	)
 	return i, err
 }
@@ -173,7 +178,7 @@ func (q *Queries) GetProblemCategories(ctx context.Context) ([]string, error) {
 }
 
 const listProblems = `-- name: ListProblems :many
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems ORDER BY category, title
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from, is_hidden FROM problems ORDER BY category, title
 `
 
 func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
@@ -204,6 +209,7 @@ func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
 			&i.Tags,
 			&i.TestcaseVisibility,
 			&i.MirrorFrom,
+			&i.IsHidden,
 		); err != nil {
 			return nil, err
 		}
@@ -216,7 +222,7 @@ func (q *Queries) ListProblems(ctx context.Context) ([]Problem, error) {
 }
 
 const listProblemsByCategory = `-- name: ListProblemsByCategory :many
-SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from FROM problems WHERE category = $1 ORDER BY title
+SELECT id, slug, title, category, time_limit_ms, memory_limit_mb, statement_md, input_desc, output_desc, constraints_desc, examples, checker_type, custom_checker_code, created_at, editorial_content, tags, testcase_visibility, mirror_from, is_hidden FROM problems WHERE category = $1 ORDER BY title
 `
 
 func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) ([]Problem, error) {
@@ -247,6 +253,7 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 			&i.Tags,
 			&i.TestcaseVisibility,
 			&i.MirrorFrom,
+			&i.IsHidden,
 		); err != nil {
 			return nil, err
 		}
@@ -259,7 +266,7 @@ func (q *Queries) ListProblemsByCategory(ctx context.Context, category string) (
 }
 
 const searchProblems = `-- name: SearchProblems :many
-SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from,
+SELECT p.id, p.slug, p.title, p.category, p.time_limit_ms, p.memory_limit_mb, p.statement_md, p.input_desc, p.output_desc, p.constraints_desc, p.examples, p.checker_type, p.custom_checker_code, p.created_at, p.editorial_content, p.tags, p.testcase_visibility, p.mirror_from, p.is_hidden,
   COALESCE((
     SELECT s.verdict
     FROM submissions s
@@ -272,13 +279,15 @@ FROM problems p
 WHERE
   ($2::text = '' OR p.title ILIKE '%' || $2 || '%' OR p.slug ILIKE '%' || $2 || '%' OR p.id::text = $2)
   AND ($3::text = '' OR p.category = $3)
+  AND ($4::boolean = true OR p.is_hidden = false)
 ORDER BY p.category, p.title
 `
 
 type SearchProblemsParams struct {
-	UserID      *int64 `json:"user_id"`
-	SearchQuery string `json:"search_query"`
-	Category    string `json:"category"`
+	UserID        *int64 `json:"user_id"`
+	SearchQuery   string `json:"search_query"`
+	Category      string `json:"category"`
+	IncludeHidden bool   `json:"include_hidden"`
 }
 
 type SearchProblemsRow struct {
@@ -300,11 +309,17 @@ type SearchProblemsRow struct {
 	Tags               []byte             `json:"tags"`
 	TestcaseVisibility string             `json:"testcase_visibility"`
 	MirrorFrom         string             `json:"mirror_from"`
+	IsHidden           bool               `json:"is_hidden"`
 	UserStatus         interface{}        `json:"user_status"`
 }
 
 func (q *Queries) SearchProblems(ctx context.Context, arg SearchProblemsParams) ([]SearchProblemsRow, error) {
-	rows, err := q.db.Query(ctx, searchProblems, arg.UserID, arg.SearchQuery, arg.Category)
+	rows, err := q.db.Query(ctx, searchProblems,
+		arg.UserID,
+		arg.SearchQuery,
+		arg.Category,
+		arg.IncludeHidden,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -331,6 +346,7 @@ func (q *Queries) SearchProblems(ctx context.Context, arg SearchProblemsParams) 
 			&i.Tags,
 			&i.TestcaseVisibility,
 			&i.MirrorFrom,
+			&i.IsHidden,
 			&i.UserStatus,
 		); err != nil {
 			return nil, err
@@ -347,7 +363,7 @@ const updateProblem = `-- name: UpdateProblem :exec
 UPDATE problems SET title = $2, slug = $3, category = $4, time_limit_ms = $5, memory_limit_mb = $6,
     statement_md = $7, input_desc = $8, output_desc = $9, constraints_desc = $10,
     examples = $11, checker_type = $12, custom_checker_code = $13, editorial_content = $14,
-    tags = $15, testcase_visibility = $16, mirror_from = $17
+    tags = $15, testcase_visibility = $16, mirror_from = $17, is_hidden = $18
 WHERE id = $1
 `
 
@@ -369,6 +385,7 @@ type UpdateProblemParams struct {
 	Tags               []byte `json:"tags"`
 	TestcaseVisibility string `json:"testcase_visibility"`
 	MirrorFrom         string `json:"mirror_from"`
+	IsHidden           bool   `json:"is_hidden"`
 }
 
 func (q *Queries) UpdateProblem(ctx context.Context, arg UpdateProblemParams) error {
@@ -390,6 +407,7 @@ func (q *Queries) UpdateProblem(ctx context.Context, arg UpdateProblemParams) er
 		arg.Tags,
 		arg.TestcaseVisibility,
 		arg.MirrorFrom,
+		arg.IsHidden,
 	)
 	return err
 }

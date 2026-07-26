@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top OJ</title>
+
+    
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+            }
+        })();
+    </script>
+
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-code-slash me-1"></i>Top OJ
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/problems"><i class="bi bi-puzzle me-1"></i>Problems</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contests"><i class="bi bi-trophy me-1"></i>Contests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/submissions"><i class="bi bi-list-check me-1"></i>Submissions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/users"><i class="bi bi-people me-1"></i>Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/classes"><i class="bi bi-building me-1"></i>Classrooms</a>
+                    </li>
+                    
+                </ul>
+                <ul class="navbar-nav align-items-center">
+                    
+                    <li class="nav-item me-3">
+                        <button id="themeToggleBtn" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-moon-stars"></i>
+                        </button>
+                    </li>
+                    
+                    
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>
+                        </li>
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-4" style="min-height: calc(100vh - 140px);">
+        
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold"><i class="bi bi-journal-bookmark-fill text-primary"></i> Test</h2>
+            <p class="text-muted mb-0">testing</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            
+                <a href="/login" class="btn btn-outline-primary">Đăng nhập để tham gia</a>
+            
+        </div>
+    </div>
+
+    
+    <ul class="nav nav-tabs mb-4" id="classTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="notice-tab" data-bs-toggle="tab" data-bs-target="#notice" type="button" role="tab"><i class="bi bi-megaphone"></i> Bảng thông báo</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab"><i class="bi bi-calendar3"></i> Lịch học</button>
+        </li>
+        
+    </ul>
+
+    <div class="tab-content" id="classTabsContent">
+        
+        <div class="tab-pane fade show active" id="notice" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    
+                        <div class="text-center text-muted py-4">Chưa có thông báo nào.</div>
+                    
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="tab-pane fade" id="schedule" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div id="weeklyScheduleView" class="d-flex flex-column gap-3">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    const noticeContent = document.getElementById("noticeContent");
+    if (noticeContent) {
+        noticeContent.innerHTML = marked.parse(noticeContent.innerText);
+    }
+    
+    
+    if (document.getElementById("editor_notice")) {
+        new EasyMDE({element: document.getElementById('editor_notice')});
+    }
+
+    
+    const daysOfWeek = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+    
+    
+    let weeklySchedule = [];
+    try {
+        const rawData = `[\u007b\u0022day\u0022: \u0022Thứ 5\u0022, \u0022end\u0022: \u002211:00\u0022, \u0022start\u0022: \u002210:50\u0022, \u0022subject\u0022: \u0022Tú\u0022\u007d]`;
+        weeklySchedule = JSON.parse(rawData);
+        if (!Array.isArray(weeklySchedule)) weeklySchedule = [];
+    } catch(e) {
+        weeklySchedule = [];
+    }
+
+    const scheduleView = document.getElementById("weeklyScheduleView");
+    const editorContainer = document.getElementById("scheduleSlotsContainer");
+    const weeklyInput = document.getElementById("weeklyScheduleInput");
+
+    
+    function renderScheduleView() {
+        if (!scheduleView) return;
+        if (weeklySchedule.length === 0) {
+            scheduleView.innerHTML = `<div class="text-center text-muted py-4">Chưa có lịch học.</div>`;
+            return;
+        }
+
+        
+        const sorted = [...weeklySchedule].sort((a, b) => {
+            const dayA = daysOfWeek.indexOf(a.day);
+            const dayB = daysOfWeek.indexOf(b.day);
+            if (dayA !== dayB) return dayA - dayB;
+            return a.start.localeCompare(b.start);
+        });
+
+        
+        let html = '';
+        let currentDay = '';
+        sorted.forEach(slot => {
+            if (slot.day !== currentDay) {
+                if (currentDay !== '') html += `</div></div>`;
+                currentDay = slot.day;
+                html += `
+                <div class="card border-0 bg-light">
+                    <div class="card-header bg-primary text-white fw-bold py-2"><i class="bi bi-calendar-day"></i> ${currentDay}</div>
+                    <div class="list-group list-group-flush border-0">`;
+            }
+            html += `
+                <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-secondary me-2"><i class="bi bi-clock"></i> ${slot.start} - ${slot.end}</span>
+                        <span class="fw-bold text-dark">${slot.subject}</span>
+                    </div>
+                </div>`;
+        });
+        if (currentDay !== '') html += `</div></div>`;
+        scheduleView.innerHTML = html;
+    }
+
+    
+    window.renderScheduleEditor = function() {
+        if (!editorContainer) return;
+        editorContainer.innerHTML = '';
+        if (weeklySchedule.length === 0) {
+            editorContainer.innerHTML = '<div class="text-muted text-center py-2">Nhấn "Thêm ca học" để bắt đầu.</div>';
+        }
+        
+        weeklySchedule.forEach((slot, index) => {
+            const div = document.createElement("div");
+            div.className = "d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm border";
+            
+            let dayOptions = daysOfWeek.map(d => `<option value="${d}" ${slot.day === d ? 'selected' : ''}>${d}</option>`).join("");
+            
+            div.innerHTML = `
+                <select class="form-select form-select-sm" style="width: 120px;" onchange="updateScheduleSlot(${index}, 'day', this.value)">
+                    ${dayOptions}
+                </select>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;" value="${slot.start}" onchange="updateScheduleSlot(${index}, 'start', this.value)" required>
+                <span>-</span>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;" value="${slot.end}" onchange="updateScheduleSlot(${index}, 'end', this.value)" required>
+                <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="Môn học/Nội dung" value="${slot.subject}" oninput="updateScheduleSlot(${index}, 'subject', this.value)" required>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeScheduleSlot(${index})"><i class="bi bi-trash"></i></button>
+            `;
+            editorContainer.appendChild(div);
+        });
+        
+        if (weeklyInput) {
+            weeklyInput.value = JSON.stringify(weeklySchedule);
+        }
+    };
+
+    window.addScheduleSlot = function() {
+        weeklySchedule.push({ day: "Thứ 2", start: "08:00", end: "10:00", subject: "" });
+        renderScheduleEditor();
+    };
+
+    window.updateScheduleSlot = function(index, field, value) {
+        if(weeklySchedule[index]) {
+            weeklySchedule[index][field] = value;
+            if (weeklyInput) weeklyInput.value = JSON.stringify(weeklySchedule);
+        }
+    };
+
+    window.removeScheduleSlot = function(index) {
+        weeklySchedule.splice(index, 1);
+        renderScheduleEditor();
+    };
+
+    renderScheduleView();
+    renderScheduleEditor();
+
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+        const tabEl = document.querySelector(`button[data-bs-target="#${activeTab}"]`);
+        if (tabEl) {
+            new bootstrap.Tab(tabEl).show();
+        }
+    }
+});
+</script>
+
+    </main>
+
+    <footer class="footer text-center text-muted py-3 mt-5">
+        <small>Top OJ &copy; 2026 — TopLearn</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const themeIcon = themeToggleBtn.querySelector('i');
+            
+            function updateIcon(theme) {
+                if (theme === 'dark') {
+                    themeIcon.className = 'bi bi-sun-fill text-warning';
+                } else {
+                    themeIcon.className = 'bi bi-moon-stars-fill';
+                }
+            }
+
+            
+            updateIcon(document.documentElement.getAttribute('data-bs-theme'));
+
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+        });
+    </script>
+    
+</body>
+</html>

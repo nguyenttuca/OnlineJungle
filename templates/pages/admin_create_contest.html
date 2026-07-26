@@ -14,7 +14,15 @@
 <tr class="required"><th><label class="required" for="id_start_time">Thời gian bắt đầu:</label></th><td><input class="datetimepicker" id="id_start_time" name="start_time"  type="datetime-local"/></td></tr>
 <tr class="required"><th><label class="required" for="id_end_time">Thời gian kết thúc:</label></th><td><input class="datetimepicker" id="id_end_time" name="end_time"  type="datetime-local"/></td></tr>
 <tr><th><label for="id_time_limit">Giới hạn thời gian (tính bằng phút):</label></th><td><input id="id_time_limit" name="time_limit" step="any" type="number"/><br/><span class="helptext">Thời gian làm bài cho một thí sinh. Có thể là số thập phân. Nếu để trống, kỳ thi sẽ không giới hạn thời gian và kết thúc vào thời điểm được định sẵn (như kỳ thi thật).</span></td></tr>
-<tr><th><label for="id_is_visible">Công khai:</label></th><td><input checked="" id="id_is_visible" name="is_visible" type="checkbox"/><br/><span class="helptext">Mọi người có thể thấy kỳ thi này. (Bất kể kỳ thi có riêng tư hay không)</span></td></tr>
+<tr><th><label for="id_class_id">Gán vào Lớp học (Tùy chọn):</label></th><td>
+    <select id="id_class_id" name="class_id">
+        <option value="">-- Không gán --</option>
+        {{ range .Data.Classes }}
+        <option value="{{ .ID }}">{{ .Name }}</option>
+        {{ end }}
+    </select>
+</td></tr>
+<tr><th><label for="id_is_hidden">Kỳ thi ẩn:</label></th><td><input id="id_is_hidden" name="is_hidden" type="checkbox"/><br/><span class="helptext" style="color:red; font-weight:bold;">Kỳ thi ẩn (Chỉ hiện trong Lớp học)</span></td></tr>
 <tr><th><label for="id_description">Mô tả kỳ thi:</label></th><td><textarea id="id_description" name="description"></textarea></td></tr>
 </tbody></table>
 <hr/>

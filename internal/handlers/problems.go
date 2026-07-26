@@ -21,9 +21,10 @@ func (env *Env) ProblemListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rawProblems, err := env.Queries.SearchProblems(ctx, sqlcdb.SearchProblemsParams{
-		SearchQuery: q,
-		Category:    category,
-		UserID:      userID,
+		SearchQuery:   q,
+		Category:      category,
+		UserID:        userID,
+		IncludeHidden: false,
 	})
 	if err != nil {
 		log.Printf("Error searching problems: %v", err)

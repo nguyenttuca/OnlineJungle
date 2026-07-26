@@ -1,16 +1,17 @@
 -- name: GetContestByID :one
-SELECT * FROM contests WHERE id = $1;
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests WHERE id = $1;
 
 -- name: ListContests :many
-SELECT * FROM contests ORDER BY start_at DESC;
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests ORDER BY start_at DESC;
 
 -- name: SearchContests :many
-SELECT * FROM contests
+SELECT id, title, start_at, end_at, created_at, ranking_type, is_hidden FROM contests
 WHERE title ILIKE '%' || sqlc.arg('q')::text || '%'
+  AND (sqlc.arg('include_hidden')::boolean = true OR is_hidden = false)
 ORDER BY start_at DESC;
 
 -- name: CreateContest :one
-INSERT INTO contests (title, start_at, end_at, ranking_type) VALUES ($1, $2, $3, $4) RETURNING *;
+INSERT INTO contests (title, start_at, end_at, ranking_type, is_hidden) VALUES ($1, $2, $3, $4, $5) RETURNING id, title, start_at, end_at, created_at, ranking_type, is_hidden;
 
 -- name: AddContestProblem :exec
 INSERT INTO contest_problems (contest_id, problem_id, label, points) VALUES ($1, $2, $3, $4);
@@ -22,7 +23,7 @@ SELECT cp.label, cp.points, p.* FROM contest_problems cp JOIN problems p ON p.id
 DELETE FROM contest_problems WHERE contest_id = $1 AND problem_id = $2;
 
 -- name: UpdateContest :exec
-UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5 WHERE id = $1;
+UPDATE contests SET title = $2, start_at = $3, end_at = $4, ranking_type = $5, is_hidden = $6 WHERE id = $1;
 
 -- name: GetContestProblem :one
 SELECT p.*

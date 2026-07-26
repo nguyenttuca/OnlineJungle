@@ -37,25 +37,29 @@ func SetupRoutes(r chi.Router, env *Env) {
 		// Public Blog Routes
 		r.Get("/blogs", env.BlogListHandler)
 		r.Get("/blogs/{slug}", env.BlogDetailHandler)
+
+		// Classroom Routes
+		r.Get("/classes", env.ListClassesHandler)
+		r.Get("/classes/{id}", env.ClassDetailHandler)
 	})
 
 	// Protected routes (requires auth)
 	r.Group(func(r chi.Router) {
 		r.Use(RequireAuth)
 		r.Post("/problems/{slug}/submit", env.SubmitPostHandler)
+		r.Post("/classes/{id}/join", env.ClassJoinHandler)
+		r.Post("/classes/{id}/members", env.ClassManageMemberHandler)
+		r.Post("/classes/{id}/update", env.ClassUpdateInfoHandler)
 	})
 
-	// Admin routes
+	// Admin and Teacher routes (Teachers can manage problems and contests)
 	r.Group(func(r chi.Router) {
 		r.Use(RequireAuth)
-		r.Use(RequireAdmin)
+		r.Use(env.RequireTeacherOrAdmin)
 		r.Get("/admin", env.AdminDashboardHandler)
-		r.Get("/admin/users/create", env.AdminCreateUserGetHandler)
-		r.Post("/admin/users/create", env.AdminCreateUserPostHandler)
-
+		
 		r.Get("/admin/problems/create", env.AdminCreateProblemGetHandler)
 		r.Post("/admin/problems/create", env.AdminCreateProblemPostHandler)
-
 		r.Get("/admin/problems/{slug}/edit", env.AdminEditProblemGetHandler)
 		r.Post("/admin/problems/{slug}/edit", env.AdminEditProblemPostHandler)
 		r.Get("/admin/problems/{slug}/tests", env.AdminEditTestGetHandler)
@@ -67,6 +71,15 @@ func SetupRoutes(r chi.Router, env *Env) {
 		r.Post("/admin/contests/{id}/edit", env.AdminEditContestPostHandler)
 		r.Post("/admin/contests/{id}/problems/add", env.AdminAddContestProblemPostHandler)
 		r.Post("/admin/contests/{id}/problems/remove", env.AdminRemoveContestProblemPostHandler)
+	})
+
+	// System Admin routes (only true admins)
+	r.Group(func(r chi.Router) {
+		r.Use(RequireAuth)
+		r.Use(RequireAdmin)
+		
+		r.Get("/admin/users/create", env.AdminCreateUserGetHandler)
+		r.Post("/admin/users/create", env.AdminCreateUserPostHandler)
 
 		// Admin Blog routes
 		r.Get("/admin/blogs", env.AdminBlogsHandler)
@@ -78,6 +91,10 @@ func SetupRoutes(r chi.Router, env *Env) {
 
 		r.Get("/admin/groups/create", env.AdminCreateGroupGetHandler)
 		r.Get("/admin/announcements/create", env.AdminCreateAnnouncementGetHandler)
+		
+		// Admin Class Routes
+		r.Get("/admin/classes/create", env.AdminCreateClassGetHandler)
+		r.Post("/admin/classes/create", env.AdminCreateClassPostHandler)
 
 		// Judge Nodes
 		r.Get("/admin/judges", env.AdminJudgesListHandler)

@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"context"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -155,24 +156,28 @@ func (d *Dispatcher) evaluateSubmission(sub sqlcdb.Submission) {
 		})
 	}
 
-	// 3. Find available judge node (for now, just pick the first healthy one)
-	// Alternatively, can implement a round-robin or least-connections load balancer in judgepool
-	nodes, err := d.Queries.ListActiveHealthyNodes(d.Ctx)
-	if err != nil || len(nodes) == 0 {
-		log.Printf("No healthy judge nodes available for sub %d", sub.ID)
+	// 3. Find available judge node and acquire it atomically
+	node, err := d.Queries.AcquireJudgeNode(d.Ctx)
+	if err != nil {
+		// sql.ErrNoRows will be returned if no node is available
+		log.Printf("No healthy judge nodes available for sub %d (active jobs maxed out)", sub.ID)
 		// Requeue the submission to try again later
 		d.Queries.RequeueSubmission(d.Ctx, sub.ID)
+		
+		// Optional: Add jitter to prevent thundering herd when many workers wake up
+		jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
+		time.Sleep(1500*time.Millisecond + jitter)
 		return
 	}
-	node := nodes[0]
 
 	// Mark as judging
 	d.Queries.UpdateSubmissionJudging(d.Ctx, sqlcdb.UpdateSubmissionJudgingParams{
 		ID:          sub.ID,
 		JudgeNodeID: &node.ID,
 	})
-	d.Queries.IncrementNodeActiveJobs(d.Ctx, node.ID)
-	defer d.Queries.DecrementNodeActiveJobs(context.Background(), node.ID) // use background context to ensure it runs even if parent canceled
+	
+	// Ensure we release the job slot when done, regardless of outcome
+	defer d.Queries.DecrementNodeActiveJobs(context.Background(), node.ID)
 
 	// 4. Send to Judge Node
 	client := judgepool.NewClient(node.BaseUrl, node.ApiKeyEncrypted)

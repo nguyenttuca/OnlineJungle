@@ -33,7 +33,10 @@ func (env *Env) ContestsHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if q != "" {
-		contests, err = env.Queries.SearchContests(ctx, q)
+		contests, err = env.Queries.SearchContests(ctx, sqlcdb.SearchContestsParams{
+			Q:             q,
+			IncludeHidden: false,
+		})
 	} else {
 		contests, err = env.Queries.ListContests(ctx)
 	}

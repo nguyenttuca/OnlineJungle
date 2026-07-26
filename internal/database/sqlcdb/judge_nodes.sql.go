@@ -11,6 +11,42 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const acquireJudgeNode = `-- name: AcquireJudgeNode :one
+UPDATE judge_nodes
+SET active_jobs = active_jobs + 1
+WHERE id = (
+    SELECT id FROM judge_nodes
+    WHERE is_active = true 
+      AND is_healthy = true 
+      AND active_jobs < max_concurrent
+    ORDER BY is_local ASC, active_jobs ASC, id ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING id, name, base_url, api_key_encrypted, is_active, supported_languages, max_concurrent, active_jobs, is_healthy, last_health_check_at, consecutive_failures, created_at, is_local
+`
+
+func (q *Queries) AcquireJudgeNode(ctx context.Context) (JudgeNode, error) {
+	row := q.db.QueryRow(ctx, acquireJudgeNode)
+	var i JudgeNode
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.BaseUrl,
+		&i.ApiKeyEncrypted,
+		&i.IsActive,
+		&i.SupportedLanguages,
+		&i.MaxConcurrent,
+		&i.ActiveJobs,
+		&i.IsHealthy,
+		&i.LastHealthCheckAt,
+		&i.ConsecutiveFailures,
+		&i.CreatedAt,
+		&i.IsLocal,
+	)
+	return i, err
+}
+
 const createJudgeNode = `-- name: CreateJudgeNode :one
 INSERT INTO judge_nodes (name, base_url, api_key_encrypted, is_active, max_concurrent)
 VALUES ($1, $2, $3, $4, $5)

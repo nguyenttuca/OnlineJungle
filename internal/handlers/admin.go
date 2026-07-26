@@ -21,7 +21,28 @@ func (env *Env) AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 
 // Problems
 func (env *Env) AdminCreateProblemGetHandler(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "admin_create_problem_new.html", nil)
+	user := GetUserFromContext(r.Context())
+	var classes []sqlcdb.Class
+	if user.Role == "admin" {
+		classes, _ = env.Queries.ListClasses(r.Context())
+	} else {
+		userClasses, _ := env.Queries.GetUserClasses(r.Context(), user.ID)
+		for _, c := range userClasses {
+			if c.Role == "teacher" {
+				classes = append(classes, sqlcdb.Class{
+					ID:          c.ID,
+					Name:        c.Name,
+					Description: c.Description,
+					ScheduleMd:  c.ScheduleMd,
+					NoticeMd:    c.NoticeMd,
+					CreatedAt:   c.CreatedAt,
+				})
+			}
+		}
+	}
+	render(w, r, "admin_create_problem_new.html", map[string]interface{}{
+		"Classes": classes,
+	})
 }
 
 func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +79,9 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		tags = "[]"
 	}
 
-	_, err = env.Queries.CreateProblem(r.Context(), sqlcdb.CreateProblemParams{
+	isHidden := r.FormValue("is_hidden") == "on"
+	
+	problem, err := env.Queries.CreateProblem(r.Context(), sqlcdb.CreateProblemParams{
 		Slug:              slug,
 		Title:             title,
 		StatementMd:       statement,
@@ -75,10 +98,21 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 		Tags:              []byte(tags),
 		TestcaseVisibility: r.FormValue("testcase_visibility"),
 		MirrorFrom:        r.FormValue("mirror_from"),
+		IsHidden:          isHidden,
 	})
 	if err != nil {
 		render(w, r, "admin_create_problem_new.html", map[string]string{"Error": "Failed to create problem: " + err.Error()})
 		return
+	}
+
+	classIDStr := r.FormValue("class_id")
+	if classIDStr != "" {
+		if classID, err := strconv.ParseInt(classIDStr, 10, 64); err == nil {
+			env.Queries.AddProblemToClass(r.Context(), sqlcdb.AddProblemToClassParams{
+				ClassID:   classID,
+				ProblemID: problem.ID,
+			})
+		}
 	}
 
 	http.Redirect(w, r, "/problems/"+slug, http.StatusSeeOther)
@@ -86,7 +120,28 @@ func (env *Env) AdminCreateProblemPostHandler(w http.ResponseWriter, r *http.Req
 
 // Contests
 func (env *Env) AdminCreateContestGetHandler(w http.ResponseWriter, r *http.Request) {
-	render(w, r, "admin_create_contest.html", nil)
+	user := GetUserFromContext(r.Context())
+	var classes []sqlcdb.Class
+	if user.Role == "admin" {
+		classes, _ = env.Queries.ListClasses(r.Context())
+	} else {
+		userClasses, _ := env.Queries.GetUserClasses(r.Context(), user.ID)
+		for _, c := range userClasses {
+			if c.Role == "teacher" {
+				classes = append(classes, sqlcdb.Class{
+					ID:          c.ID,
+					Name:        c.Name,
+					Description: c.Description,
+					ScheduleMd:  c.ScheduleMd,
+					NoticeMd:    c.NoticeMd,
+					CreatedAt:   c.CreatedAt,
+				})
+			}
+		}
+	}
+	render(w, r, "admin_create_contest.html", map[string]interface{}{
+		"Classes": classes,
+	})
 }
 
 func (env *Env) AdminCreateContestPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,15 +173,28 @@ func (env *Env) AdminCreateContestPostHandler(w http.ResponseWriter, r *http.Req
 		rankingType = "IOI" // default
 	}
 
-	_, err := env.Queries.CreateContest(r.Context(), sqlcdb.CreateContestParams{
+	isHidden := r.FormValue("is_hidden") == "on"
+
+	contest, err := env.Queries.CreateContest(r.Context(), sqlcdb.CreateContestParams{
 		Title:       title,
 		StartAt:     pgtype.Timestamptz{Time: startAt, Valid: true},
 		EndAt:       pgtype.Timestamptz{Time: endAt, Valid: true},
 		RankingType: rankingType,
+		IsHidden:    isHidden,
 	})
 	if err != nil {
 		render(w, r, "admin_create_contest.html", map[string]interface{}{"Error": "Failed to create contest: " + err.Error()})
 		return
+	}
+
+	classIDStr := r.FormValue("class_id")
+	if classIDStr != "" {
+		if classID, err := strconv.ParseInt(classIDStr, 10, 64); err == nil {
+			env.Queries.AddContestToClass(r.Context(), sqlcdb.AddContestToClassParams{
+				ClassID:    classID,
+				ContestID: contest.ID,
+			})
+		}
 	}
 
 	http.Redirect(w, r, "/contests", http.StatusSeeOther)

@@ -1,0 +1,413 @@
+{{ define "page" }}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold"><i class="bi bi-journal-bookmark-fill text-primary"></i> {{ .Data.Class.Name }}</h2>
+            <p class="text-muted mb-0">{{ .Data.Class.Description }}</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            {{ if not .User }}
+                <a href="/login" class="btn btn-outline-primary">Đăng nhập để tham gia</a>
+            {{ else if eq .Data.UserRole "admin" "teacher" }}
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editClassModal">
+                    <i class="bi bi-pencil"></i> Chỉnh sửa Lớp
+                </button>
+            {{ else if eq .Data.UserRole "" }}
+                <form action="/classes/{{ .Data.Class.ID }}/join" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ $.CsrfToken }}">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-in-right"></i> Xin vào lớp</button>
+                </form>
+            {{ else if eq .Data.UserRole "pending" }}
+                <button class="btn btn-secondary" disabled>Đang chờ duyệt</button>
+            {{ else if eq .Data.UserRole "student" }}
+                <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Đã tham gia</span>
+            {{ end }}
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <ul class="nav nav-tabs mb-4" id="classTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="notice-tab" data-bs-toggle="tab" data-bs-target="#notice" type="button" role="tab"><i class="bi bi-megaphone"></i> Bảng thông báo</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab"><i class="bi bi-calendar3"></i> Lịch học</button>
+        </li>
+        {{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") (eq .Data.UserRole "student") }}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="problems-tab" data-bs-toggle="tab" data-bs-target="#problems" type="button" role="tab"><i class="bi bi-journal-code"></i> Bài tập</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="contests-tab" data-bs-toggle="tab" data-bs-target="#contests" type="button" role="tab"><i class="bi bi-trophy"></i> Kỳ thi</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab"><i class="bi bi-people"></i> Thành viên</button>
+        </li>
+        {{ end }}
+    </ul>
+
+    <div class="tab-content" id="classTabsContent">
+        <!-- Bảng thông báo -->
+        <div class="tab-pane fade show active" id="notice" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    {{ if .Data.Class.NoticeMd }}
+                        <div class="markdown-content" id="noticeContent">{{ .Data.Class.NoticeMd }}</div>
+                    {{ else }}
+                        <div class="text-center text-muted py-4">Chưa có thông báo nào.</div>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Lịch học -->
+        <div class="tab-pane fade" id="schedule" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div id="weeklyScheduleView" class="d-flex flex-column gap-3">
+                        <!-- Timetable will be rendered here by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") (eq .Data.UserRole "student") }}
+        <!-- Bài tập -->
+        <div class="tab-pane fade" id="problems" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bài tập</th>
+                                    <th>Danh mục</th>
+                                    <th>Giới hạn</th>
+                                    {{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") }}
+                                    <th class="text-end">Trạng thái</th>
+                                    {{ end }}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Data.Problems }}
+                                <tr>
+                                    <td>
+                                        <a href="/problems/{{ .Slug }}" class="text-decoration-none fw-bold">{{ .Title }}</a>
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ .Category }}</span></td>
+                                    <td class="text-muted small">{{ .TimeLimitMs }}ms / {{ .MemoryLimitMb }}MB</td>
+                                    {{ if or (eq $.Data.UserRole "admin") (eq $.Data.UserRole "teacher") }}
+                                    <td class="text-end">
+                                        {{ if .IsHidden }}<span class="badge bg-warning text-dark"><i class="bi bi-eye-slash"></i> Ẩn</span>{{ else }}<span class="badge bg-info"><i class="bi bi-globe"></i> Công khai</span>{{ end }}
+                                    </td>
+                                    {{ end }}
+                                </tr>
+                                {{ else }}
+                                <tr><td colspan="4" class="text-center text-muted py-4">Chưa có bài tập nào.</td></tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kỳ thi -->
+        <div class="tab-pane fade" id="contests" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kỳ thi</th>
+                                    <th>Bắt đầu</th>
+                                    <th>Kết thúc</th>
+                                    {{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") }}
+                                    <th class="text-end">Trạng thái</th>
+                                    {{ end }}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Data.Contests }}
+                                <tr>
+                                    <td>
+                                        <a href="/contests/{{ .ID }}" class="text-decoration-none fw-bold">{{ .Title }}</a>
+                                    </td>
+                                    <td>{{ .StartAt.Time.Format "15:04 02/01/2006" }}</td>
+                                    <td>{{ .EndAt.Time.Format "15:04 02/01/2006" }}</td>
+                                    {{ if or (eq $.Data.UserRole "admin") (eq $.Data.UserRole "teacher") }}
+                                    <td class="text-end">
+                                        {{ if .IsHidden }}<span class="badge bg-warning text-dark"><i class="bi bi-eye-slash"></i> Ẩn</span>{{ else }}<span class="badge bg-info"><i class="bi bi-globe"></i> Công khai</span>{{ end }}
+                                    </td>
+                                    {{ end }}
+                                </tr>
+                                {{ else }}
+                                <tr><td colspan="4" class="text-center text-muted py-4">Chưa có kỳ thi nào.</td></tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thành viên -->
+        <div class="tab-pane fade" id="members" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tài khoản</th>
+                                    <th>Họ tên</th>
+                                    <th>Vai trò</th>
+                                    <th>Ngày tham gia</th>
+                                    {{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") }}
+                                    <th class="text-end">Hành động</th>
+                                    {{ end }}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Data.Members }}
+                                <tr>
+                                    <td>
+                                        <a href="/users/{{ .Username }}" class="text-decoration-none fw-bold">
+                                            <i class="bi bi-person-circle text-muted"></i> {{ .Username }}
+                                        </a>
+                                    </td>
+                                    <td>{{ .DisplayName }}</td>
+                                    <td>
+                                        {{ if eq .Role "teacher" }}
+                                            <span class="badge bg-primary">Giáo viên</span>
+                                        {{ else if eq .Role "student" }}
+                                            <span class="badge bg-success">Học sinh</span>
+                                        {{ else if eq .Role "pending" }}
+                                            <span class="badge bg-secondary">Chờ duyệt</span>
+                                        {{ end }}
+                                    </td>
+                                    <td>{{ .CreatedAt.Time.Format "02/01/2006" }}</td>
+                                    {{ if or (eq $.Data.UserRole "admin") (eq $.Data.UserRole "teacher") }}
+                                    <td class="text-end">
+                                        <form action="/classes/{{ $.Data.Class.ID }}/members" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ $.CsrfToken }}">
+                                            <input type="hidden" name="user_id" value="{{ .ID }}">
+                                            
+                                            {{ if eq .Role "pending" }}
+                                                <button type="submit" name="action" value="approve" class="btn btn-sm btn-success" title="Duyệt"><i class="bi bi-check-lg"></i></button>
+                                                <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger" title="Từ chối"><i class="bi bi-x-lg"></i></button>
+                                            {{ else }}
+                                                <div class="d-inline-flex gap-1">
+                                                    {{ if eq .Role "student" }}
+                                                    <button type="submit" name="action" value="promote" class="btn btn-sm btn-outline-primary" title="Thăng cấp Giáo viên"><i class="bi bi-arrow-up-circle"></i></button>
+                                                    {{ end }}
+                                                    {{ if eq .Role "teacher" }}
+                                                    <button type="submit" name="action" value="demote" class="btn btn-sm btn-outline-warning" title="Hạ cấp Học sinh"><i class="bi bi-arrow-down-circle"></i></button>
+                                                    {{ end }}
+                                                    <button type="submit" name="action" value="remove" class="btn btn-sm btn-outline-danger" title="Xóa khỏi lớp" onclick="return confirm('Bạn có chắc chắn muốn xóa thành viên này khỏi lớp?');"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                            {{ end }}
+                                        </form>
+                                    </td>
+                                    {{ end }}
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+</div>
+
+<!-- Modal Chỉnh sửa Lớp học -->
+{{ if or (eq .Data.UserRole "admin") (eq .Data.UserRole "teacher") }}
+<div class="modal fade" id="editClassModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Chỉnh sửa Lớp học</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/classes/{{ .Data.Class.ID }}/update" method="POST" id="editClassForm">
+                    <input type="hidden" name="csrf_token" value="{{ .CsrfToken }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên lớp học</label>
+                        <input type="text" name="name" class="form-control" value="{{ .Data.Class.Name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mô tả ngắn</label>
+                        <input type="text" name="description" class="form-control" value="{{ .Data.Class.Description }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Bảng thông báo (Markdown)</label>
+                        <textarea name="notice_md" id="editor_notice" class="form-control" rows="5">{{ .Data.Class.NoticeMd }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold w-100 d-flex justify-content-between align-items-center">
+                            Thời khóa biểu (Hàng tuần)
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addScheduleSlot()">
+                                <i class="bi bi-plus-circle"></i> Thêm ca học
+                            </button>
+                        </label>
+                        <div id="scheduleSlotsContainer" class="d-flex flex-column gap-2 border p-3 rounded bg-light">
+                            <!-- Slots will be injected here by JS -->
+                        </div>
+                        <input type="hidden" name="weekly_schedule" id="weeklyScheduleInput">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="submit" form="editClassForm" class="btn btn-primary">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EasyMDE -->
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+{{ end }}
+
+<!-- Marked.js -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Render markdown for Notice
+    const noticeContent = document.getElementById("noticeContent");
+    if (noticeContent) {
+        noticeContent.innerHTML = marked.parse(noticeContent.innerText);
+    }
+    
+    // Initialize EasyMDE for edit form
+    if (document.getElementById("editor_notice")) {
+        new EasyMDE({element: document.getElementById('editor_notice')});
+    }
+
+    // Weekly Schedule Logic
+    const daysOfWeek = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+    
+    // Parse Weekly Schedule data
+    let weeklySchedule = [];
+    try {
+        const rawData = `{{ printf "%s" .Data.Class.WeeklySchedule }}`;
+        weeklySchedule = JSON.parse(rawData);
+        if (!Array.isArray(weeklySchedule)) weeklySchedule = [];
+    } catch(e) {
+        weeklySchedule = [];
+    }
+
+    const scheduleView = document.getElementById("weeklyScheduleView");
+    const editorContainer = document.getElementById("scheduleSlotsContainer");
+    const weeklyInput = document.getElementById("weeklyScheduleInput");
+
+    // Render View Mode (Timetable)
+    function renderScheduleView() {
+        if (!scheduleView) return;
+        if (weeklySchedule.length === 0) {
+            scheduleView.innerHTML = `<div class="text-center text-muted py-4">Chưa có lịch học.</div>`;
+            return;
+        }
+
+        // Sort schedule by day and then start time
+        const sorted = [...weeklySchedule].sort((a, b) => {
+            const dayA = daysOfWeek.indexOf(a.day);
+            const dayB = daysOfWeek.indexOf(b.day);
+            if (dayA !== dayB) return dayA - dayB;
+            return (a.start || "").localeCompare(b.start || "");
+        });
+
+        // Group by day
+        let html = '';
+        let currentDay = '';
+        sorted.forEach(slot => {
+            if (slot.day !== currentDay) {
+                if (currentDay !== '') html += `</div></div>`;
+                currentDay = slot.day;
+                html += `
+                <div class="card border-0 bg-light">
+                    <div class="card-header bg-primary text-white fw-bold py-2"><i class="bi bi-calendar-day"></i> ${currentDay}</div>
+                    <div class="list-group list-group-flush border-0">`;
+            }
+            html += `
+                <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-secondary me-2"><i class="bi bi-clock"></i> ${slot.start || "--:--"} - ${slot.end || "--:--"}</span>
+                        <span class="fw-bold text-dark">${slot.subject || "Chưa có nội dung"}</span>
+                    </div>
+                </div>`;
+        });
+        if (currentDay !== '') html += `</div></div>`;
+        scheduleView.innerHTML = html;
+    }
+
+    // Render Editor Mode
+    window.renderScheduleEditor = function() {
+        if (!editorContainer) return;
+        editorContainer.innerHTML = '';
+        if (weeklySchedule.length === 0) {
+            editorContainer.innerHTML = '<div class="text-muted text-center py-2">Nhấn "Thêm ca học" để bắt đầu.</div>';
+        }
+        
+        weeklySchedule.forEach((slot, index) => {
+            const div = document.createElement("div");
+            div.className = "d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm border";
+            
+            let dayOptions = daysOfWeek.map(d => `<option value="${d}" ${slot.day === d ? 'selected' : ''}>${d}</option>`).join("");
+            
+            div.innerHTML = `
+                <select class="form-select form-select-sm" style="width: 120px;" onchange="updateScheduleSlot(${index}, 'day', this.value)">
+                    ${dayOptions}
+                </select>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;" value="${slot.start}" onchange="updateScheduleSlot(${index}, 'start', this.value)">
+                <span>-</span>
+                <input type="time" class="form-control form-control-sm" style="width: 110px;" value="${slot.end}" onchange="updateScheduleSlot(${index}, 'end', this.value)">
+                <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="Môn học/Nội dung" value="${slot.subject}" oninput="updateScheduleSlot(${index}, 'subject', this.value)">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeScheduleSlot(${index})"><i class="bi bi-trash"></i></button>
+            `;
+            editorContainer.appendChild(div);
+        });
+        
+        if (weeklyInput) {
+            weeklyInput.value = JSON.stringify(weeklySchedule);
+        }
+    };
+
+    window.addScheduleSlot = function() {
+        weeklySchedule.push({ day: "Thứ 2", start: "08:00", end: "10:00", subject: "" });
+        renderScheduleEditor();
+    };
+
+    window.updateScheduleSlot = function(index, field, value) {
+        if(weeklySchedule[index]) {
+            weeklySchedule[index][field] = value;
+            if (weeklyInput) weeklyInput.value = JSON.stringify(weeklySchedule);
+        }
+    };
+
+    window.removeScheduleSlot = function(index) {
+        weeklySchedule.splice(index, 1);
+        renderScheduleEditor();
+    };
+
+    renderScheduleView();
+    renderScheduleEditor();
+
+    // Restore active tab from URL query
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+        const tabEl = document.querySelector(`button[data-bs-target="#${activeTab}"]`);
+        if (tabEl) {
+            new bootstrap.Tab(tabEl).show();
+        }
+    }
+});
+</script>
+{{ end }}

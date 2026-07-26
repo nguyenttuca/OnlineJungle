@@ -38,6 +38,35 @@ type Blog struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Class struct {
+	ID             int64              `json:"id"`
+	Name           string             `json:"name"`
+	Description    string             `json:"description"`
+	ScheduleMd     string             `json:"schedule_md"`
+	NoticeMd       string             `json:"notice_md"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	WeeklySchedule []byte             `json:"weekly_schedule"`
+}
+
+type ClassContest struct {
+	ClassID   int64              `json:"class_id"`
+	ContestID int64              `json:"contest_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type ClassMember struct {
+	ClassID   int64              `json:"class_id"`
+	UserID    int64              `json:"user_id"`
+	Role      string             `json:"role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type ClassProblem struct {
+	ClassID   int64              `json:"class_id"`
+	ProblemID int64              `json:"problem_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Contest struct {
 	ID          int64              `json:"id"`
 	Title       string             `json:"title"`
@@ -45,6 +74,7 @@ type Contest struct {
 	EndAt       pgtype.Timestamptz `json:"end_at"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	RankingType string             `json:"ranking_type"`
+	IsHidden    bool               `json:"is_hidden"`
 }
 
 type ContestProblem struct {
@@ -102,6 +132,7 @@ type Problem struct {
 	Tags               []byte             `json:"tags"`
 	TestcaseVisibility string             `json:"testcase_visibility"`
 	MirrorFrom         string             `json:"mirror_from"`
+	IsHidden           bool               `json:"is_hidden"`
 }
 
 type Session struct {

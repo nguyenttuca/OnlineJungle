@@ -33,3 +33,17 @@ DELETE FROM judge_nodes WHERE id = $1;
 
 -- name: ToggleJudgeNodeActive :exec
 UPDATE judge_nodes SET is_active = NOT is_active WHERE id = $1;
+
+-- name: AcquireJudgeNode :one
+UPDATE judge_nodes
+SET active_jobs = active_jobs + 1
+WHERE id = (
+    SELECT id FROM judge_nodes
+    WHERE is_active = true 
+      AND is_healthy = true 
+      AND active_jobs < max_concurrent
+    ORDER BY is_local ASC, active_jobs ASC, id ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
